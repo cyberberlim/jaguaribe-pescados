@@ -1,6 +1,6 @@
 const POCKETBASE_URL = 'https://pocketbase-production-bb88.up.railway.app';
 const ADMIN_EMAIL    = 'danillonascimentoalves1@gmail.com';
-const ADMIN_PASSWORD = '12345678Dn';
+const ADMIN_PASSWORD = '268207Dn';
 
 const funcionarios = [
   { nome: 'Ana Bethe',    cargo: 'produtor', telefone: '', pix: '', status: 'ativo' },
