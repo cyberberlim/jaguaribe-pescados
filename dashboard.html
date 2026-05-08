@@ -345,7 +345,23 @@
       }
     }
 
-    @media (max-width: 768px) {
+@media (max-width: 767px) {
+      #sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 1000;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+      #sidebar.open,
+      #sidebar.active {
+        transform: translateX(0) !important;
+      }
+    }
+
+      @media (max-width: 768px) {
       #appContainer {
         display: flex !important;
         flex-direction: column !important;
@@ -384,17 +400,12 @@
       height: 300px;
     }
 
-    canvas {
-      filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.6));
-    }
-
-    .chart-wrapper,
-    .chart-container,
-    [id*="chartContainer"],
-    [id*="Chart"] {
-      transform: perspective(600px) rotateX(8deg);
+    .chart-wrapper {
+      position: relative;
+      height: 220px;
+      filter: drop-shadow(0px 12px 18px rgba(0,0,0,0.6));
+      transform: perspective(500px) rotateX(10deg);
       transform-origin: center bottom;
-      height: 280px !important;
     }
 
     #producaoList {
@@ -543,7 +554,7 @@
           <div class="mb-4">
            <h3 class="font-heading font-semibold" style="font-size:14px">Receitas</h3>
           </div>
-          <div style="position:relative;width:100%;height:280px">
+          <div class="chart-wrapper">
            <canvas id="chartReceitas"></canvas>
           </div>
          </div>
@@ -551,7 +562,7 @@
           <div class="mb-4">
            <h3 class="font-heading font-semibold" style="font-size:14px">Despesas</h3>
           </div>
-          <div style="position:relative;width:100%;height:280px">
+          <div class="chart-wrapper">
            <canvas id="chartDespesas"></canvas>
           </div>
          </div>
@@ -559,7 +570,7 @@
           <div class="mb-4">
            <h3 class="font-heading font-semibold" style="font-size:14px">Produções</h3>
           </div>
-          <div style="position:relative;width:100%;height:280px">
+          <div class="chart-wrapper">
            <canvas id="chartProducao"></canvas>
           </div>
          </div>
@@ -3416,154 +3427,162 @@
 
     // ====== GRÃFICOS ======
     function initCharts() {
-      const receitas = currentData.transacoes.filter(t => t.tipo_transacao === 'entrada');
-      const despesas = currentData.transacoes.filter(t => t.tipo_transacao === 'saida');
-      
+      // ===== GRÁFICO RECEITAS =====
       const ctxReceitas = document.getElementById('chartReceitas');
+      if (ctxReceitas) {
+        if (window.chartReceitasInstance) {
+          window.chartReceitasInstance.destroy();
+        }
+        const entradas = (currentData.transacoes || [])
+          .filter(t => t.tipo_transacao === 'entrada')
+          .reduce((s,t) => s + parseFloat(t.valor_transacao || 0), 0);
+        const saidas = (currentData.transacoes || [])
+          .filter(t => t.tipo_transacao === 'saida')
+          .reduce((s,t) => s + parseFloat(t.valor_transacao || 0), 0);
+        
+        window.chartReceitasInstance = new Chart(ctxReceitas, {
+          type: 'pie',
+          data: {
+            labels: ['Entradas', 'Saídas'],
+            datasets: [{
+              data: [entradas || 1, saidas || 0],
+              backgroundColor: ['#00e6c8', '#ff6b6b'],
+              borderWidth: 0,
+              hoverOffset: 10
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            rotation: -20,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  color: 'rgba(255,255,255,0.8)',
+                  font: { size: 12, weight: '600' },
+                  padding: 16,
+                  usePointStyle: true
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    return ' R$ ' + ctx.parsed.toFixed(2);
+                  }
+                }
+              }
+            },
+            elements: { arc: { borderWidth: 0 } },
+            animation: { animateRotate: true, duration: 1000 }
+          }
+        });
+      }
+
+      // ===== GRÁFICO DESPESAS =====
       const ctxDespesas = document.getElementById('chartDespesas');
+      if (ctxDespesas) {
+        if (window.chartDespesasInstance) {
+          window.chartDespesasInstance.destroy();
+        }
+        const fixas = (currentData.despesasFixas || [])
+          .reduce((s,d) => s + parseFloat(d.valor_despesa_fixa || 0), 0);
+        const variaveis = (currentData.despesasVariaveis || [])
+          .reduce((s,d) => s + parseFloat(d.valor_despesa_fixa || 0), 0);
+        const saidas = (currentData.transacoes || [])
+          .filter(t => t.tipo_transacao === 'saida')
+          .reduce((s,t) => s + parseFloat(t.valor_transacao || 0), 0);
+
+        window.chartDespesasInstance = new Chart(ctxDespesas, {
+          type: 'pie',
+          data: {
+            labels: ['Despesas Fixas', 'Despesas Variáveis', 'Saídas Caixa'],
+            datasets: [{
+              data: [fixas || 0, variaveis || 0, saidas || 0].map(v => v || 1),
+              backgroundColor: ['#ff6b6b', '#ffc837', '#a78bfa'],
+              borderWidth: 0,
+              hoverOffset: 10
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            rotation: -20,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  color: 'rgba(255,255,255,0.8)',
+                  font: { size: 12, weight: '600' },
+                  padding: 16,
+                  usePointStyle: true
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    return ' R$ ' + ctx.parsed.toFixed(2);
+                  }
+                }
+              }
+            },
+            elements: { arc: { borderWidth: 0 } },
+            animation: { animateRotate: true, duration: 1000 }
+          }
+        });
+      }
+
+      // ===== GRÁFICO PRODUÇÕES =====
       const ctxProducao = document.getElementById('chartProducao');
-      
-      if (chartReceitas) chartReceitas.destroy();
-      if (chartDespesas) chartDespesas.destroy();
-      if (chartProducao) chartProducao.destroy();
-      
-      // Gráfico de Receitas
-      chartReceitas = new Chart(ctxReceitas, {
-        type: 'pie',
-        data: {
-          labels: receitas.map(r => r.descricao),
-          datasets: [{
-            data: receitas.map(r => safeNumber(r.valor_transacao)),
-            backgroundColor: [
-              '#00e6c8',
-              '#4ecdc4',
-              '#ff6b6b',
-              '#ffc837',
-              '#a78bfa',
-              '#f97316'
-            ],
-            borderWidth: 0,
-            hoverOffset: 10
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          rotation: -20,
-          plugins: {
-            legend: {
-              position: 'right',
-              labels: {
-                color: 'rgba(255,255,255,0.8)',
-                font: { size: 12, weight: '600' },
-                padding: 16,
-                usePointStyle: true,
-                pointStyleWidth: 10
-              }
-            }
-          },
-          elements: {
-            arc: { borderWidth: 0 }
-          },
-          animation: {
-            animateRotate: true,
-            duration: 1000
-          }
+      if (ctxProducao) {
+        if (window.chartProducaoInstance) {
+          window.chartProducaoInstance.destroy();
         }
-      });
-      
-      // Gráfico de Despesas
-      chartDespesas = new Chart(ctxDespesas, {
-        type: 'pie',
-        data: {
-          labels: despesas.map(d => d.descricao),
-          datasets: [{
-            data: despesas.map(d => d.valor_transacao),
-            backgroundColor: [
-              '#00e6c8',
-              '#4ecdc4',
-              '#ff6b6b',
-              '#ffc837',
-              '#a78bfa',
-              '#f97316'
-            ],
-            borderWidth: 0,
-            hoverOffset: 10
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          rotation: -20,
-          plugins: {
-            legend: {
-              position: 'right',
-              labels: {
-                color: 'rgba(255,255,255,0.8)',
-                font: { size: 12, weight: '600' },
-                padding: 16,
-                usePointStyle: true,
-                pointStyleWidth: 10
+        const descabecamento = (currentData.producao || [])
+          .filter(p => (p.servico || '').toLowerCase().includes('desc'))
+          .reduce((s,p) => s + parseFloat(p.peso || 0), 0);
+        const file = (currentData.producao || [])
+          .filter(p => (p.servico || '').toLowerCase().includes('fil'))
+          .reduce((s,p) => s + parseFloat(p.peso || 0), 0);
+
+        window.chartProducaoInstance = new Chart(ctxProducao, {
+          type: 'pie',
+          data: {
+            labels: ['Descabeçamento', 'Filé'],
+            datasets: [{
+              data: [descabecamento || 1, file || 0],
+              backgroundColor: ['#00e6c8', '#4ecdc4'],
+              borderWidth: 0,
+              hoverOffset: 10
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            rotation: -20,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  color: 'rgba(255,255,255,0.8)',
+                  font: { size: 12, weight: '600' },
+                  padding: 16,
+                  usePointStyle: true
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    return ' ' + ctx.parsed.toFixed(2) + ' kg';
+                  }
+                }
               }
-            }
-          },
-          elements: {
-            arc: { borderWidth: 0 }
-          },
-          animation: {
-            animateRotate: true,
-            duration: 1000
+            },
+            elements: { arc: { borderWidth: 0 } },
+            animation: { animateRotate: true, duration: 1000 }
           }
-        }
-      });
-      
-      // Gráfico de Produção
-      const producaoDescabecamento = currentData.producao.filter(p => p.servico === 'descabeçamento').reduce((a, b) => a + b.peso, 0);
-      const producaoFile = currentData.producao.filter(p => p.servico === 'filé').reduce((a, b) => a + b.peso, 0);
-      
-      chartProducao = new Chart(ctxProducao, {
-        type: 'pie',
-        data: {
-          labels: ['Descabeçamento', 'Filé'],
-          datasets: [{
-            data: [producaoDescabecamento, producaoFile],
-            backgroundColor: [
-              '#00e6c8',
-              '#4ecdc4',
-              '#ff6b6b',
-              '#ffc837',
-              '#a78bfa',
-              '#f97316'
-            ],
-            borderWidth: 0,
-            hoverOffset: 10
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          rotation: -20,
-          plugins: {
-            legend: {
-              position: 'right',
-              labels: {
-                color: 'rgba(255,255,255,0.8)',
-                font: { size: 12, weight: '600' },
-                padding: 16,
-                usePointStyle: true,
-                pointStyleWidth: 10
-              }
-            }
-          },
-          elements: {
-            arc: { borderWidth: 0 }
-          },
-          animation: {
-            animateRotate: true,
-            duration: 1000
-          }
-        }
-      });
+        });
+      }
     }
 
     // ====== INIT ======
@@ -3875,7 +3894,6 @@ function navigateTo(pageId) {
   } else {
     console.warn('Página não encontrada:', pageId);
   }
-
 }
 
 function abrirSidebarMobile() {
