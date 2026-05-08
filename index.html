@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="pt-BR" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jaguaribe Pescados - Sistema de Gestão</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <script>
+tailwind.config={theme:{extend:{colors:{navy:'#0a1628','navy-light':'#111d35','navy-mid':'#162240',teal:'#00e6c8','teal-dim':'#00b89e',cyan:'#00d4ff','glass':'rgba(255,255,255,0.05)','glass-border':'rgba(255,255,255,0.08)'},fontFamily:{heading:['Space Grotesk','sans-serif'],body:['DM Sans','sans-serif']}}}}
+</script>
+  <style>
+html,body{height:100%;margin:0;font-family:'DM Sans',sans-serif;background:#0a1628;color:#fff;overflow:hidden}
+*{box-sizing:border-box}
+.glass{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(12px)}
+.glass-strong{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(16px)}
+.glow{box-shadow:0 0 30px rgba(0,230,200,0.08)}
+.btn-primary{background:linear-gradient(135deg,#00e6c8,#00b89e);color:#0a1628;font-weight:600;border:none;cursor:pointer;transition:all .2s}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,230,200,0.3)}
+.sidebar-link{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:10px;cursor:pointer;transition:all .15s;color:rgba(255,255,255,0.5);font-size:14px}
+.sidebar-link:hover,.sidebar-link.active{background:rgba(0,230,200,0.08);color:#00e6c8}
+.sidebar-link.active{border-left:3px solid #00e6c8}
+.stat-card{transition:transform .2s}
+.stat-card:hover{transform:translateY(-2px)}
+input[type="text"],input[type="email"],input[type="password"],input[type="number"],input[type="date"],select,textarea{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:10px;padding:10px 14px;width:100%;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;transition:border .2s}
+input:focus,select:focus,textarea:focus{border-color:#00e6c8}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}
+.fade-in{animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 20px rgba(0,230,200,0.1)}50%{box-shadow:0 0 40px rgba(0,230,200,0.2)}}
+@keyframes shake {0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); }}
+.chart-bar{transition:height .6s cubic-bezier(.4,0,.2,1)}
+.table-row:hover{background:rgba(255,255,255,0.03)}
+.toast{position:fixed;top:20px;right:20px;padding:14px 20px;border-radius:12px;z-index:9999;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px)}
+</style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full"><!-- LOGIN PAGE -->
+  <div id="loginPage" class="h-full w-full flex items-center justify-center" style="background:radial-gradient(ellipse at 30% 20%,rgba(0,230,200,0.06),transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(0,212,255,0.04),transparent 50%),#0a1628">
+   <div class="glass-strong rounded-2xl p-10 w-full max-w-md mx-4 glow fade-in" style="animation:pulse-glow 4s infinite"><!-- Logo -->
+    <div class="flex flex-col items-center mb-8">
+     <div class="w-16 h-16 rounded-xl flex items-center justify-center mb-4" style="background:linear-gradient(135deg,#00e6c8,#00b89e)">
+      <svg width="32" height="32" viewbox="0 0 24 24" fill="none" stroke="#0a1628" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+       <path d="M2 16s4-4 8-1c3 2 5-1 7-3s5-2 5-2" /><path d="M2 12s4-4 8-1c3 2 5-1 7-3s5-2 5-2" /><path d="M2 20s4-4 8-1c3 2 5-1 7-3s5-2 5-2" />
+      </svg>
+     </div>
+     <h1 class="font-heading text-2xl font-bold" id="loginTitle">Acesso ao Sistema</h1>
+     <p class="text-sm mt-1" style="color:rgba(255,255,255,0.4)" id="loginSubtitle">Jaguaribe Pescados — Parajuru</p>
+    </div>
+    <form id="loginForm" onsubmit="return false">
+     <div class="mb-4"><label for="loginEmail" class="block text-xs mb-2" style="color:rgba(255,255,255,0.5)">E-mail</label> <input type="email" id="loginEmail" placeholder="seu@email.com" required>
+     </div>
+     <div class="mb-4"><label for="loginPass" class="block text-xs mb-2" style="color:rgba(255,255,255,0.5)">Senha</label> <input type="password" id="loginPass" placeholder="••••••••" required>
+     </div>
+     <div class="flex items-center justify-between mb-6"><label class="flex items-center gap-2 cursor-pointer text-xs" style="color:rgba(255,255,255,0.4)"> <input type="checkbox" class="accent-teal-400 w-4 h-4 rounded"> Lembrar-me </label> <a href="#" class="text-xs" style="color:#00e6c8" onclick="event.preventDefault();showToast('Link de recuperação enviado!','success')">Esqueci minha senha</a>
+     </div><button type="submit" class="btn-primary w-full py-3 rounded-xl text-sm font-heading tracking-wide" onclick="doLogin()">Entrar</button>
+    </form>
+   </div>
+  </div><!-- MAIN APP -->
+  <div id="appShell" class="h-full w-full hidden" style="display:none">
+   <div class="h-full flex"><!-- SIDEBAR -->
+    <aside id="sidebar" class="h-full flex-shrink-0 flex flex-col glass" style="width:240px;border-right:1px solid rgba(255,255,255,0.06)">
+     <div class="p-5 flex items-center gap-3 border-b" style="border-color:rgba(255,255,255,0.06)">
+      <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,#00e6c8,#00b89e)">
+       <svg width="18" height="18" viewbox="0 0 24 24" fill="none" stroke="#0a1628" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 16s4-4 8-1c3 2 5-1 7-3s5-2 5-2" /><path d="M2 12s4-4 8-1c3 2 5-1 7-3s5-2 5-2" />
+       </svg>
+      </div>
+      <div>
+       <div class="font-heading font-bold text-sm leading-tight" id="sidebarCompany">
+        Jaguaribe
+       </div>
+       <div class="text-xs" style="color:rgba(255,255,255,0.35)">
+        Pescados
+       </div>
+      </div>
+     </div>
+     <nav class="flex-1 p-4 space-y-1 overflow-auto">
+      <div class="sidebar-link active" data-page="dashboard" onclick="navigateTo('dashboard')">
+       <i data-lucide="layout-dashboard" style="width:18px;height:18px"></i>Dashboard
+      </div>
+      <div class="sidebar-link" data-page="vendas" onclick="navigateTo('vendas')">
+       <i data-lucide="shopping-cart" style="width:18px;height:18px"></i>Vendas
+      </div>
+      <div class="sidebar-link" data-page="despesas" onclick="navigateTo('despesas')">
+       <i data-lucide="trending-down" style="width:18px;height:18px"></i>Despesas
+      </div>
+      <div class="sidebar-link" data-page="estoque" onclick="navigateTo('estoque')">
+       <i data-lucide="package" style="width:18px;height:18px"></i>Estoque
+      </div>
+      <div class="sidebar-link" data-page="clientes" onclick="navigateTo('clientes')">
+       <i data-lucide="users" style="width:18px;height:18px"></i>Clientes
+      </div>
+      <div class="sidebar-link" data-page="relatorios" onclick="navigateTo('relatorios')">
+       <i data-lucide="bar-chart-3" style="width:18px;height:18px"></i>Relatórios
+      </div>
+     </nav>
+     <div class="p-4 border-t" style="border-color:rgba(255,255,255,0.06)">
+      <div class="sidebar-link" onclick="doLogout()">
+       <i data-lucide="log-out" style="width:18px;height:18px"></i>Sair
+      </div>
+     </div>
+    </aside><!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden"><!-- TOPBAR -->
+     <header class="flex items-center justify-between px-6 py-4 flex-shrink-0" style="border-bottom:1px solid rgba(255,255,255,0.06)">
+      <div class="flex items-center gap-3"><button id="menuToggle" class="lg:hidden p-2 rounded-lg" style="color:rgba(255,255,255,0.5)" onclick="toggleSidebar()"><i data-lucide="menu" style="width:20px;height:20px"></i></button>
+       <h2 class="font-heading font-semibold text-lg" id="pageTitle">Dashboard</h2>
+      </div>
+      <div class="flex items-center gap-4">
+       <div class="relative hidden sm:block"><input type="text" placeholder="Buscar..." class="pl-9 pr-4 py-2 text-xs rounded-lg" style="width:200px;background:rgba(255,255,255,0.04)"> <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.3)"></i>
+       </div><button class="relative p-2 rounded-lg" style="color:rgba(255,255,255,0.5)"><i data-lucide="bell" style="width:18px;height:18px"></i><span class="absolute top-1 right-1 w-2 h-2 rounded-full" style="background:#00e6c8"></span></button>
+       <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style="background:linear-gradient(135deg,#00e6c8,#00b89e);color:#0a1628">
+        JP
+       </div>
+      </div>
+     </header><!-- PAGE CONTENT -->
+     <main id="mainContent" class="flex-1 overflow-auto p-6"><!-- DASHBOARD -->
+      <div id="page-dashboard" class="page-content fade-in">
+       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        <div class="glass rounded-xl p-5 stat-card">
+         <div class="flex items-center justify-between mb-3">
+          <span class="text-xs" style="color:rgba(255,255,255,0.4)">Receita Mensal</span>
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(0,230,200,0.1)">
+           <i data-lucide="dollar-sign" style="width:16px;height:16px;color:#00e6c8"></i>
+          </div>
+         </div>
+         <div class="font-heading text-2xl font-bold">
+          R$ 87.420
+         </div>
+         <div class="text-xs mt-1" style="color:#00e6c8">
+          +12.5% <span style="color:rgba(255,255,255,0.3)">vs mês anterior</span>
+         </div>
+        </div>
+        <div class="glass rounded-xl p-5 stat-card">
+         <div class="flex items-center justify-between mb-3">
+          <span class="text-xs" style="color:rgba(255,255,255,0.4)">Despesas</span>
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(255,107,107,0.1)">
+           <i data-lucide="trending-down" style="width:16px;height:16px;color:#ff6b6b"></i>
+          </div>
+         </div>
+         <div class="font-heading text-2xl font-bold">
+          R$ 34.180
+         </div>
+         <div class="text-xs mt-1" style="color:#ff6b6b">
+          +3.2% <span style="color:rgba(255,255,255,0.3)">vs mês anterior</span>
+         </div>
+        </div>
+        <div class="glass rounded-xl p-5 stat-card">
+         <div class="flex items-center justify-between mb-3">
+          <span class="text-xs" style="color:rgba(255,255,255,0.4)">Lucro Líquido</span>
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(0,212,255,0.1)">
+           <i data-lucide="wallet" style="width:16px;height:16px;color:#00d4ff"></i>
+          </div>
+         </div>
+         <div class="font-heading text-2xl font-bold">
+          R$ 53.240
+         </div>
+         <div class="text-xs mt-1" style="color:#00d4ff">
+          +18.7% <span style="color:rgba(255,255,255,0.3)">margem</span>
+         </div>
+        </div>
+        <div class="glass rounded-xl p-5 stat-card">
+         <div class="flex items-center justify-between mb-3">
+          <span class="text-xs" style="color:rgba(255,255,255,0.4)">Pedidos</span>
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(255,200,55,0.1)">
+           <i data-lucide="package" style="width:16px;height:16px;color:#ffc837"></i>
+          </div>
+         </div>
+         <div class="font-heading text-2xl font-bold">
+          342
+         </div>
+         <div class="text-xs mt-1" style="color:#ffc837">
+          +8.1% <span style="color:rgba(255,255,255,0.3)">este mês</span>
+         </div>
+        </div>
+       </div><!-- Chart area -->
+       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div class="glass rounded-xl p-5 lg:col-span-2">
+         <div class="flex items-center justify-between mb-5">
+          <h3 class="font-heading font-semibold text-sm">Faturamento Semanal</h3>
+          <div class="flex gap-2"><button class="text-xs px-3 py-1 rounded-lg" style="background:rgba(0,230,200,0.15);color:#00e6c8">Semana</button> <button class="text-xs px-3 py-1 rounded-lg" style="color:rgba(255,255,255,0.3)">Mês</button>
+          </div>
+         </div>
+         <div class="flex items-end gap-3 h-40" id="chartBars"></div>
+        </div>
+        <div class="glass rounded-xl p-5">
+         <h3 class="font-heading font-semibold text-sm mb-4">Top Produtos</h3>
+         <div class="space-y-4" id="topProducts"></div>
+        </div>
+       </div><!-- Recent transactions -->
+       <div class="glass rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4">
+         <h3 class="font-heading font-semibold text-sm">Transações Recentes</h3><button class="text-xs" style="color:#00e6c8">Ver todas</button>
+        </div>
+        <div class="overflow-x-auto">
+         <table class="w-full text-sm">
+          <thead>
+           <tr style="color:rgba(255,255,255,0.35)">
+            <th class="text-left py-2 px-3 text-xs font-medium">Descrição</th>
+            <th class="text-left py-2 px-3 text-xs font-medium">Tipo</th>
+            <th class="text-left py-2 px-3 text-xs font-medium">Data</th>
+            <th class="text-right py-2 px-3 text-xs font-medium">Valor</th>
+           </tr>
+          </thead>
+          <tbody id="recentTx"></tbody>
+         </table>
+        </div>
+       </div>
+      </div><!-- VENDAS -->
+      <div id="page-vendas" class="page-content fade-in hidden">
+       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
+        <div>
+         <h3 class="font-heading text-xl font-bold">Vendas</h3>
+         <p class="text-xs" style="color:rgba(255,255,255,0.4)">Registre e acompanhe suas vendas</p>
+        </div><button class="btn-primary px-5 py-2.5 rounded-xl text-sm flex items-center gap-2" onclick="openModal('vendaModal')"><i data-lucide="plus" style="width:16px;height:16px"></i>Nova Venda</button>
+       </div>
+       <div class="glass rounded-xl overflow-hidden">
+        <div class="overflow-x-auto">
+         <table class="w-full text-sm">
+          <thead>
+           <tr style="background:rgba(255,255,255,0.03)">
+            <th class="text-left py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Cliente</th>
+            <th class="text-left py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Produto</th>
+            <th class="text-left py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Qtd (kg)</th>
+            <th class="text-left py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Data</th>
+            <th class="text-right py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Total</th>
+           </tr>
+          </thead>
+          <tbody id="vendasTable"></tbody>
+         </table>
+        </div>
+       </div>
+      </div><!-- DESPESAS -->
+      <div id="page-despesas" class="page-content fade-in hidden">
+       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
+        <div>
+         <h3 class="font-heading text-xl font-bold">Despesas</h3>
+         <p class="text-xs" style="color:rgba(255,255,255,0.4)">Controle seus gastos operacionais</p>
+        </div><button class="btn-primary px-5 py-2.5 rounded-xl text-sm flex items-center gap-2" onclick="openModal('despesaModal')"><i data-lucide="plus" style="width:16px;height:16px"></i>Nova Despesa</button>
+       </div>
+       <div class="glass rounded-xl overflow-hidden">
+        <div class="overflow-x-auto">
+         <table class="w-full text-sm">
+          <thead>
+           <tr style="background:rgba(255,255,255,0.03)">
+            <th class="text-left py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Descrição</th>
+            <th class="text-left py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Categoria</th>
+            <th class="text-left py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Data</th>
+            <th class="text-right py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Valor</th>
+           </tr>
+          </thead>
+          <tbody id="despesasTable"></tbody>
+         </table>
+        </div>
+       </div>
+      </div><!-- ESTOQUE -->
+      <div id="page-estoque" class="page-content fade-in hidden">
+       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
+        <div>
+         <h3 class="font-heading text-xl font-bold">Estoque</h3>
+         <p class="text-xs" style="color:rgba(255,255,255,0.4)">Gerencie seus produtos em estoque</p>
+        </div><button class="btn-primary px-5 py-2.5 rounded-xl text-sm flex items-center gap-2" onclick="openModal('estoqueModal')"><i data-lucide="plus" style="width:16px;height:16px"></i>Novo Produto</button>
+       </div>
+       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="estoqueGrid"></div>
+      </div><!-- CLIENTES -->
+      <div id="page-clientes" class="page-content fade-in hidden">
+       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
+        <div>
+         <h3 class="font-heading text-xl font-bold">Clientes</h3>
+         <p class="text-xs" style="color:rgba(255,255,255,0.4)">Base de clientes cadastrados</p>
+        </div><button class="btn-primary px-5 py-2.5 rounded-xl text-sm flex items-center gap-2" onclick="openModal('clienteModal')"><i data-lucide="plus" style="width:16px;height:16px"></i>Novo Cliente</button>
+       </div>
+       <div class="glass rounded-xl overflow-hidden">
+        <div class="overflow-x-auto">
+         <table class="w-full text-sm">
+          <thead>
+           <tr style="background:rgba(255,255,255,0.03)">
+            <th class="text-left py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Nome</th>
+            <th class="text-left py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Telefone</th>
+            <th class="text-left py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Cidade</th>
+            <th class="text-right py-3 px-4 text-xs font-medium" style="color:rgba(255,255,255,0.4)">Total Compras</th>
+           </tr>
+          </thead>
+          <tbody id="clientesTable"></tbody>
+         </table>
+        </div>
+       </div>
+      </div><!-- RELATÓRIOS -->
+      <div id="page-relatorios" class="page-content fade-in hidden">
+       <div class="mb-6">
+        <h3 class="font-heading text-xl font-bold">Relatórios</h3>
+        <p class="text-xs" style="color:rgba(255,255,255,0.4)">Visão geral do desempenho</p>
+       </div>
+       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div class="glass rounded-xl p-5">
+         <h4 class="font-heading text-sm font-semibold mb-4">Vendas por Produto</h4>
+         <div class="space-y-3" id="relProdutos"></div>
+        </div>
+        <div class="glass rounded-xl p-5">
+         <h4 class="font-heading text-sm font-semibold mb-4">Despesas por Categoria</h4>
+         <div class="space-y-3" id="relDespesas"></div>
+        </div>
+       </div>
+       <div class="glass rounded-xl p-5">
+        <h4 class="font-heading text-sm font-semibold mb-4">Resumo Financeiro</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+         <div class="p-4 rounded-xl" style="background:rgba(0,230,200,0.06)">
+          <div class="text-xs mb-1" style="color:rgba(255,255,255,0.4)">
+           Receita Total
+          </div>
+          <div class="font-heading text-xl font-bold" style="color:#00e6c8">
+           R$ 524.800
+          </div>
+         </div>
+         <div class="p-4 rounded-xl" style="background:rgba(255,107,107,0.06)">
+          <div class="text-xs mb-1" style="color:rgba(255,255,255,0.4)">
+           Despesas Totais
+          </div>
+          <div class="font-heading text-xl font-bold" style="color:#ff6b6b">
+           R$ 198.300
+          </div>
+         </div>
+         <div class="p-4 rounded-xl" style="background:rgba(0,212,255,0.06)">
+          <div class="text-xs mb-1" style="color:rgba(255,255,255,0.4)">
+           Lucro Líquido
+          </div>
+          <div class="font-heading text-xl font-bold" style="color:#00d4ff">
+           R$ 326.500
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </main>
+    </div>
+   </div>
+  </div><!-- MODALS -->
+  <div id="vendaModal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('vendaModal')">
+   <div class="glass-strong rounded-2xl p-6 w-full max-w-md mx-4 fade-in">
+    <div class="flex items-center justify-between mb-5">
+     <h3 class="font-heading font-semibold">Nova Venda</h3><button onclick="closeModal('vendaModal')" style="color:rgba(255,255,255,0.4)"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <form onsubmit="return false" class="space-y-3">
+     <div>
+      <label for="vCliente" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Cliente</label><input type="text" id="vCliente" placeholder="Nome do cliente">
+     </div>
+     <div>
+      <label for="vProduto" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Produto</label><select id="vProduto"><option>Camarão</option><option>Lagosta</option><option>Peixe Fresco</option><option>Caranguejo</option></select>
+     </div>
+     <div class="grid grid-cols-2 gap-3">
+      <div>
+       <label for="vQtd" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Qtd (kg)</label><input type="number" id="vQtd" placeholder="0">
+      </div>
+      <div>
+       <label for="vValor" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Valor Total</label><input type="number" id="vValor" placeholder="R$ 0">
+      </div>
+     </div><button class="btn-primary w-full py-3 rounded-xl text-sm mt-2" onclick="addVenda()">Registrar Venda</button>
+    </form>
+   </div>
+  </div>
+  <div id="despesaModal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('despesaModal')">
+   <div class="glass-strong rounded-2xl p-6 w-full max-w-md mx-4 fade-in">
+    <div class="flex items-center justify-between mb-5">
+     <h3 class="font-heading font-semibold">Nova Despesa</h3><button onclick="closeModal('despesaModal')" style="color:rgba(255,255,255,0.4)"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <form onsubmit="return false" class="space-y-3">
+     <div>
+      <label for="dDesc" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Descrição</label><input type="text" id="dDesc" placeholder="Descrição da despesa">
+     </div>
+     <div>
+      <label for="dCat" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Categoria</label><select id="dCat"><option>Combustível</option><option>Manutenção</option><option>Salários</option><option>Insumos</option><option>Outros</option></select>
+     </div>
+     <div>
+      <label for="dValor" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Valor</label><input type="number" id="dValor" placeholder="R$ 0">
+     </div><button class="btn-primary w-full py-3 rounded-xl text-sm mt-2" onclick="addDespesa()">Registrar Despesa</button>
+    </form>
+   </div>
+  </div>
+  <div id="estoqueModal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('estoqueModal')">
+   <div class="glass-strong rounded-2xl p-6 w-full max-w-md mx-4 fade-in">
+    <div class="flex items-center justify-between mb-5">
+     <h3 class="font-heading font-semibold">Novo Produto</h3><button onclick="closeModal('estoqueModal')" style="color:rgba(255,255,255,0.4)"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <form onsubmit="return false" class="space-y-3">
+     <div>
+      <label for="eProd" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Produto</label><input type="text" id="eProd" placeholder="Nome do produto">
+     </div>
+     <div class="grid grid-cols-2 gap-3">
+      <div>
+       <label for="eQtd" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Qtd (kg)</label><input type="number" id="eQtd" placeholder="0">
+      </div>
+      <div>
+       <label for="ePreco" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Preço/kg</label><input type="number" id="ePreco" placeholder="R$ 0">
+      </div>
+     </div><button class="btn-primary w-full py-3 rounded-xl text-sm mt-2" onclick="addEstoque()">Adicionar Produto</button>
+    </form>
+   </div>
+  </div>
+  <div id="clienteModal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('clienteModal')">
+   <div class="glass-strong rounded-2xl p-6 w-full max-w-md mx-4 fade-in">
+    <div class="flex items-center justify-between mb-5">
+     <h3 class="font-heading font-semibold">Novo Cliente</h3><button onclick="closeModal('clienteModal')" style="color:rgba(255,255,255,0.4)"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <form onsubmit="return false" class="space-y-3">
+     <div>
+      <label for="cNome" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Nome</label><input type="text" id="cNome" placeholder="Nome completo">
+     </div>
+     <div>
+      <label for="cTel" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Telefone</label><input type="text" id="cTel" placeholder="(00) 00000-0000">
+     </div>
+     <div>
+      <label for="cCidade" class="block text-xs mb-1" style="color:rgba(255,255,255,0.4)">Cidade</label><input type="text" id="cCidade" placeholder="Cidade">
+     </div><button class="btn-primary w-full py-3 rounded-xl text-sm mt-2" onclick="addCliente()">Cadastrar Cliente</button>
+    </form>
+   </div>
+  </div><!-- TOAST -->
+  <div id="toastContainer"></div>
+  <script>
+// ===== STATE =====
+let vendas=[
+  {cliente:'Restaurante Mar Azul',produto:'Camarão',qtd:50,valor:3500,data:'2025-01-10'},
+  {cliente:'Peixaria do Porto',produto:'Lagosta',qtd:20,valor:4800,data:'2025-01-09'},
+  {cliente:'Hotel Praia',produto:'Peixe Fresco',qtd:80,valor:2400,data:'2025-01-08'},
+];
+let despesas=[
+  {desc:'Diesel embarcação',cat:'Combustível',valor:2800,data:'2025-01-10'},
+  {desc:'Reparo motor',cat:'Manutenção',valor:1500,data:'2025-01-08'},
+  {desc:'Gelo industrial',cat:'Insumos',valor:650,data:'2025-01-07'},
+];
+let estoque=[
+  {nome:'Camarão Rosa',qtd:320,preco:70,status:'ok'},
+  {nome:'Lagosta',qtd:45,preco:240,status:'baixo'},
+  {nome:'Peixe Fresco',qtd:580,preco:30,status:'ok'},
+  {nome:'Caranguejo',qtd:18,preco:55,status:'critico'},
+];
+let clientes=[
+  {nome:'Restaurante Mar Azul',tel:'(85) 99901-2233',cidade:'Fortaleza',total:'R$ 42.500'},
+  {nome:'Peixaria do Porto',tel:'(88) 99812-4455',cidade:'Parajuru',total:'R$ 28.300'},
+  {nome:'Hotel Praia',tel:'(85) 99765-6677',cidade:'Aracati',total:'R$ 15.800'},
+];
+
+// ===== CONFIG =====
+const defaultConfig={
+  company_name:'Jaguaribe Pescados',
+  company_subtitle:'Parajuru',
+  background_color:'#0a1628',
+  surface_color:'rgba(255,255,255,0.04)',
+  text_color:'#ffffff',
+  primary_action_color:'#00e6c8',
+  secondary_action_color:'#00d4ff',
+  font_family:'DM Sans',
+  font_size:14
+};
+
+function applyConfig(c){
+  const t=c.company_name||defaultConfig.company_name;
+  const s=c.company_subtitle||defaultConfig.company_subtitle;
+  const el1=document.getElementById('loginSubtitle');
+  if(el1)el1.textContent=t+' — '+s;
+  const el2=document.getElementById('sidebarCompany');
+  if(el2)el2.textContent=t.split(' ')[0]||t;
+  document.body.style.background=c.background_color||defaultConfig.background_color;
+  const font=c.font_family||defaultConfig.font_family;
+  document.body.style.fontFamily=font+', sans-serif';
+}
+
+if(window.elementSdk){
+  window.elementSdk.init({
+    defaultConfig,
+    onConfigChange:async(c)=>applyConfig(c),
+    mapToCapabilities:(c)=>({
+      recolorables:[
+        {get:()=>c.background_color||defaultConfig.background_color,set:v=>{c.background_color=v;window.elementSdk.setConfig({background_color:v})}},
+        {get:()=>c.surface_color||defaultConfig.surface_color,set:v=>{c.surface_color=v;window.elementSdk.setConfig({surface_color:v})}},
+        {get:()=>c.text_color||defaultConfig.text_color,set:v=>{c.text_color=v;window.elementSdk.setConfig({text_color:v})}},
+        {get:()=>c.primary_action_color||defaultConfig.primary_action_color,set:v=>{c.primary_action_color=v;window.elementSdk.setConfig({primary_action_color:v})}},
+        {get:()=>c.secondary_action_color||defaultConfig.secondary_action_color,set:v=>{c.secondary_action_color=v;window.elementSdk.setConfig({secondary_action_color:v})}}
+      ],
+      borderables:[],
+      fontEditable:{get:()=>c.font_family||defaultConfig.font_family,set:v=>{c.font_family=v;window.elementSdk.setConfig({font_family:v})}},
+      fontSizeable:{get:()=>c.font_size||defaultConfig.font_size,set:v=>{c.font_size=v;window.elementSdk.setConfig({font_size:v})}}
+    }),
+    mapToEditPanelValues:(c)=>new Map([
+      ['company_name',c.company_name||defaultConfig.company_name],
+      ['company_subtitle',c.company_subtitle||defaultConfig.company_subtitle]
+    ])
+  });
+}
+
+// ===== LOGIN =====
+function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const senha = document.getElementById('loginPass').value.trim();
+
+  const usuarios = [
+    { nome: 'Danillo',   email: 'danillo', senha: 'DAN2024',   perfil: 'admin' },
+    { nome: 'Jefferson', email: 'jefferson', senha: 'JEFF2024', perfil: 'admin' },
+    { nome: 'Sandy',     email: 'sandy',   senha: 'SANDY2024', perfil: 'funcionario' }
+  ];
+
+  const user = usuarios.find(u =>
+    u.email.toLowerCase() === email.toLowerCase() &&
+    u.senha === senha
+  );
+
+  if (!user) {
+    showToast('❌ Usuário ou senha incorretos!', 'error');
+    const form = document.getElementById('loginForm');
+    if (form) {
+      form.style.animation = 'shake .3s ease';
+      setTimeout(() => form.style.animation = '', 300);
+    }
+    return;
+  }
+
+  localStorage.setItem('userProfile', user.perfil);
+  localStorage.setItem('userName', user.nome);
+  window.location.href = 'dashboard.html';
+}
+function doLogout(){
+  document.getElementById('appShell').style.display='none';
+  document.getElementById('loginPage').style.display='flex';
+}
+
+// ===== NAVIGATION =====
+function navigateTo(page){
+  document.querySelectorAll('.page-content').forEach(p=>p.classList.add('hidden'));
+  const target=document.getElementById('page-'+page);
+  if(target){target.classList.remove('hidden');target.classList.remove('fade-in');void target.offsetWidth;target.classList.add('fade-in')}
+  document.querySelectorAll('.sidebar-link[data-page]').forEach(l=>{l.classList.toggle('active',l.dataset.page===page)});
+  const titles={dashboard:'Dashboard',vendas:'Vendas',despesas:'Despesas',estoque:'Estoque',clientes:'Clientes',relatorios:'Relatórios'};
+  document.getElementById('pageTitle').textContent=titles[page]||page;
+  if(window.innerWidth<1024)document.getElementById('sidebar').style.transform='translateX(-100%)';
+}
+function toggleSidebar(){
+  const s=document.getElementById('sidebar');
+  const open=s.style.transform!=='translateX(-100%)';
+  s.style.transform=open?'translateX(-100%)':'translateX(0)';
+}
+
+// ===== MODALS =====
+function openModal(id){document.getElementById(id).classList.remove('hidden');lucide.createIcons()}
+function closeModal(id){document.getElementById(id).classList.add('hidden')}
+
+// ===== TOAST =====
+function showToast(msg,type='success'){
+  const c=document.getElementById('toastContainer');
+  const t=document.createElement('div');
+  t.className='toast glass-strong';
+  t.style.color=type==='success'?'#00e6c8':'#ff6b6b';
+  t.innerHTML='<div class="flex items-center gap-2 text-sm font-medium">'+msg+'</div>';
+  c.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300)},2500);
+}
+
+// ===== RENDER =====
+function renderAll(){renderChart();renderTopProducts();renderRecentTx();renderVendas();renderDespesas();renderEstoque();renderClientes();renderRelatorios();lucide.createIcons()}
+
+function renderChart(){
+  const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const vals=[12400,9800,15200,11600,18900,14300,8700];
+  const max=Math.max(...vals);
+  const c=document.getElementById('chartBars');
+  c.innerHTML=days.map((d,i)=>{
+    const h=Math.round((vals[i]/max)*100);
+    return`<div class="flex-1 flex flex-col items-center gap-2"><div class="w-full rounded-t-lg chart-bar" style="height:${h}%;background:linear-gradient(180deg,#00e6c8,rgba(0,230,200,0.2));min-height:4px"></div><span class="text-xs" style="color:rgba(255,255,255,0.35)">${d}</span></div>`;
+  }).join('');
+}
+
+function renderTopProducts(){
+  const prods=[{n:'Camarão Rosa',v:'R$ 35.200',p:85},{n:'Lagosta',v:'R$ 24.800',p:60},{n:'Peixe Fresco',v:'R$ 18.400',p:45},{n:'Caranguejo',v:'R$ 9.020',p:22}];
+  document.getElementById('topProducts').innerHTML=prods.map(p=>`<div><div class="flex justify-between text-xs mb-1"><span>${p.n}</span><span style="color:#00e6c8">${p.v}</span></div><div class="h-1.5 rounded-full" style="background:rgba(255,255,255,0.06)"><div class="h-full rounded-full" style="width:${p.p}%;background:linear-gradient(90deg,#00e6c8,#00b89e)"></div></div></div>`).join('');
+}
+
+function renderRecentTx(){
+  const txs=[
+    {d:'Venda Camarão — Mar Azul',t:'Entrada',dt:'10/01',v:'R$ 3.500',c:'#00e6c8'},
+    {d:'Diesel embarcação',t:'Saída',dt:'10/01',v:'-R$ 2.800',c:'#ff6b6b'},
+    {d:'Venda Lagosta — Porto',t:'Entrada',dt:'09/01',v:'R$ 4.800',c:'#00e6c8'},
+    {d:'Reparo motor',t:'Saída',dt:'08/01',v:'-R$ 1.500',c:'#ff6b6b'},
+  ];
+  document.getElementById('recentTx').innerHTML=txs.map(t=>`<tr class="table-row" style="border-top:1px solid rgba(255,255,255,0.04)"><td class="py-3 px-3">${t.d}</td><td class="py-3 px-3"><span class="px-2 py-0.5 rounded-full text-xs" style="background:${t.c}15;color:${t.c}">${t.t}</span></td><td class="py-3 px-3" style="color:rgba(255,255,255,0.4)">${t.dt}</td><td class="py-3 px-3 text-right font-medium" style="color:${t.c}">${t.v}</td></tr>`).join('');
+}
+
+function renderVendas(){
+  document.getElementById('vendasTable').innerHTML=vendas.map(v=>`<tr class="table-row" style="border-top:1px solid rgba(255,255,255,0.04)"><td class="py-3 px-4">${v.cliente}</td><td class="py-3 px-4">${v.produto}</td><td class="py-3 px-4">${v.qtd}</td><td class="py-3 px-4" style="color:rgba(255,255,255,0.4)">${v.data}</td><td class="py-3 px-4 text-right font-medium" style="color:#00e6c8">R$ ${v.valor.toLocaleString()}</td></tr>`).join('');
+}
+
+function renderDespesas(){
+  document.getElementById('despesasTable').innerHTML=despesas.map(d=>`<tr class="table-row" style="border-top:1px solid rgba(255,255,255,0.04)"><td class="py-3 px-4">${d.desc}</td><td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-xs" style="background:rgba(255,255,255,0.06)">${d.cat}</span></td><td class="py-3 px-4" style="color:rgba(255,255,255,0.4)">${d.data}</td><td class="py-3 px-4 text-right font-medium" style="color:#ff6b6b">R$ ${d.valor.toLocaleString()}</td></tr>`).join('');
+}
+
+function renderEstoque(){
+  const colors={ok:'#00e6c8',baixo:'#ffc837',critico:'#ff6b6b'};
+  const labels={ok:'Normal',baixo:'Baixo',critico:'Crítico'};
+  document.getElementById('estoqueGrid').innerHTML=estoque.map(e=>`<div class="glass rounded-xl p-5 stat-card"><div class="flex items-center justify-between mb-3"><span class="font-heading font-semibold">${e.nome}</span><span class="px-2 py-0.5 rounded-full text-xs" style="background:${colors[e.status]}15;color:${colors[e.status]}">${labels[e.status]}</span></div><div class="grid grid-cols-2 gap-3"><div><div class="text-xs" style="color:rgba(255,255,255,0.35)">Estoque</div><div class="font-heading font-bold">${e.qtd} kg</div></div><div><div class="text-xs" style="color:rgba(255,255,255,0.35)">Preço/kg</div><div class="font-heading font-bold">R$ ${e.preco}</div></div></div></div>`).join('');
+}
+
+function renderClientes(){
+  document.getElementById('clientesTable').innerHTML=clientes.map(c=>`<tr class="table-row" style="border-top:1px solid rgba(255,255,255,0.04)"><td class="py-3 px-4 font-medium">${c.nome}</td><td class="py-3 px-4" style="color:rgba(255,255,255,0.4)">${c.tel}</td><td class="py-3 px-4" style="color:rgba(255,255,255,0.4)">${c.cidade}</td><td class="py-3 px-4 text-right font-medium" style="color:#00e6c8">${c.total}</td></tr>`).join('');
+}
+
+function renderRelatorios(){
+  const prods=[{n:'Camarão',p:40,c:'#00e6c8'},{n:'Lagosta',p:28,c:'#00d4ff'},{n:'Peixe Fresco',p:20,c:'#ffc837'},{n:'Caranguejo',p:12,c:'#ff6b6b'}];
+  document.getElementById('relProdutos').innerHTML=prods.map(p=>`<div><div class="flex justify-between text-xs mb-1"><span>${p.n}</span><span style="color:${p.c}">${p.p}%</span></div><div class="h-2 rounded-full" style="background:rgba(255,255,255,0.06)"><div class="h-full rounded-full" style="width:${p.p}%;background:${p.c}"></div></div></div>`).join('');
+  const cats=[{n:'Combustível',p:35,c:'#ff6b6b'},{n:'Salários',p:30,c:'#ffc837'},{n:'Manutenção',p:20,c:'#00d4ff'},{n:'Insumos',p:15,c:'#00e6c8'}];
+  document.getElementById('relDespesas').innerHTML=cats.map(c=>`<div><div class="flex justify-between text-xs mb-1"><span>${c.n}</span><span style="color:${c.c}">${c.p}%</span></div><div class="h-2 rounded-full" style="background:rgba(255,255,255,0.06)"><div class="h-full rounded-full" style="width:${c.p}%;background:${c.c}"></div></div></div>`).join('');
+}
+
+// ===== ADD DATA =====
+function addVenda(){
+  const c=document.getElementById('vCliente').value,p=document.getElementById('vProduto').value,q=+document.getElementById('vQtd').value,v=+document.getElementById('vValor').value;
+  if(!c||!q||!v){showToast('Preencha todos os campos','error');return}
+  vendas.unshift({cliente:c,produto:p,qtd:q,valor:v,data:new Date().toISOString().split('T')[0]});
+  renderVendas();closeModal('vendaModal');showToast('Venda registrada com sucesso!');
+  document.getElementById('vCliente').value='';document.getElementById('vQtd').value='';document.getElementById('vValor').value='';
+}
+function addDespesa(){
+  const d=document.getElementById('dDesc').value,c=document.getElementById('dCat').value,v=+document.getElementById('dValor').value;
+  if(!d||!v){showToast('Preencha todos os campos','error');return}
+  despesas.unshift({desc:d,cat:c,valor:v,data:new Date().toISOString().split('T')[0]});
+  renderDespesas();closeModal('despesaModal');showToast('Despesa registrada!');
+  document.getElementById('dDesc').value='';document.getElementById('dValor').value='';
+}
+function addEstoque(){
+  const n=document.getElementById('eProd').value,q=+document.getElementById('eQtd').value,p=+document.getElementById('ePreco').value;
+  if(!n||!q||!p){showToast('Preencha todos os campos','error');return}
+  const s=q>100?'ok':q>30?'baixo':'critico';
+  estoque.push({nome:n,qtd:q,preco:p,status:s});
+  renderEstoque();closeModal('estoqueModal');showToast('Produto adicionado!');lucide.createIcons();
+  document.getElementById('eProd').value='';document.getElementById('eQtd').value='';document.getElementById('ePreco').value='';
+}
+function addCliente(){
+  const n=document.getElementById('cNome').value,t=document.getElementById('cTel').value,c=document.getElementById('cCidade').value;
+  if(!n){showToast('Informe o nome do cliente','error');return}
+  clientes.push({nome:n,tel:t||'—',cidade:c||'—',total:'R$ 0'});
+  renderClientes();closeModal('clienteModal');showToast('Cliente cadastrado!');
+  document.getElementById('cNome').value='';document.getElementById('cTel').value='';document.getElementById('cCidade').value='';
+}
+
+// ===== RESPONSIVE SIDEBAR =====
+(function(){
+  const sb=document.getElementById('sidebar');
+  function check(){
+    if(window.innerWidth<1024){sb.style.position='fixed';sb.style.zIndex='100';sb.style.transform='translateX(-100%)';sb.style.transition='transform .2s'}
+    else{sb.style.position='relative';sb.style.transform='translateX(0)';sb.style.transition='none'}
+  }
+  window.addEventListener('resize',check);check( );})();
+
+// Init icons
+lucide.createIcons();
+</script>
+ </body>
+</html>
