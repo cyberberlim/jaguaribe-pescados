@@ -6,7 +6,6 @@
   <title>Jaguaribe Pescados - Sistema de Gestão</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/pocketbase/dist/pocketbase.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -175,17 +174,20 @@
       background-color: rgba(255,255,255,0.05) !important;
       color: #ffffff !important;
       border: 1px solid rgba(255,255,255,0.1) !important;
+      border-radius: 10px !important;
     }
 
     select option {
-      background-color: #1a2744 !important;
+      background-color: #0d1b2e !important;
       color: #ffffff !important;
+      padding: 8px !important;
     }
 
-    select:focus {
-      outline: none !important;
-      border-color: #00e6c8 !important;
-      box-shadow: 0 0 0 2px rgba(0,230,200,0.2) !important;
+    select option:hover,
+    select option:focus,
+    select option:checked {
+      background-color: #00e6c8 !important;
+      color: #0a1628 !important;
     }
 
     ::-webkit-scrollbar {
@@ -402,10 +404,8 @@
 
     .chart-wrapper {
       position: relative;
-      height: 220px;
-      filter: drop-shadow(0px 12px 18px rgba(0,0,0,0.6));
-      transform: perspective(500px) rotateX(10deg);
-      transform-origin: center bottom;
+      height: 240px;
+      width: 100%;
     }
 
     #producaoList {
@@ -418,6 +418,20 @@
       #producaoList {
         grid-template-columns: repeat(2, 1fr);
       }
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 220px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    canvas {
+      display: block !important;
+      background: transparent;
     }
   </style>
   <style>body { box-sizing: border-box; }</style>
@@ -555,7 +569,8 @@
            <h3 class="font-heading font-semibold" style="font-size:14px">Receitas</h3>
           </div>
           <div class="chart-wrapper">
-           <canvas id="chartReceitas"></canvas>
+           <canvas id="chartReceitas" 
+             style="display:block;width:100%;min-height:220px;"></canvas>
           </div>
          </div>
          <div class="glass rounded-xl p-4">
@@ -563,7 +578,8 @@
            <h3 class="font-heading font-semibold" style="font-size:14px">Despesas</h3>
           </div>
           <div class="chart-wrapper">
-           <canvas id="chartDespesas"></canvas>
+           <canvas id="chartDespesas" 
+             style="display:block;width:100%;min-height:220px;"></canvas>
           </div>
          </div>
          <div class="glass rounded-xl p-4">
@@ -571,7 +587,8 @@
            <h3 class="font-heading font-semibold" style="font-size:14px">Produções</h3>
           </div>
           <div class="chart-wrapper">
-           <canvas id="chartProducao"></canvas>
+           <canvas id="chartProducao" 
+             style="display:block;width:100%;min-height:220px;"></canvas>
           </div>
          </div>
         </div>
@@ -1069,16 +1086,40 @@
      <form onsubmit="salvarProducao(event)">
       <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Funcionário</label> <select id="producFuncionario" required> <option value="">Selecione</option> </select>
       </div>
-      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Serviço</label> <select id="producServico" required onchange="atualizarValorProducao()"> <option value="">Selecione</option> <option value="descabeçamento">Descabeçamento (R$ 0.50/kg)</option> <option value="filé">Filé (R$ 2.50/kg)</option> </select>
+      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Serviço</label> <select id="producServico" required onchange="calcularValorProducao()"
+  style="width:100%;background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:10px;padding:12px;color:#fff;
+    font-size:14px;outline:none;">
+  <option value="">Selecione o serviço</option>
+  <option value="descabecamento" data-preco="0.50">Descabeçamento (R$ 0,50/kg)</option>
+  <option value="file" data-preco="1.50">Filé (R$ 1,50/kg)</option>
+  <option value="file_evicerado" data-preco="2.50">Filé Evicerado (R$ 2,50/kg)</option>
+  <option value="eviceramento" data-preco="1.00">Eviceramento (R$ 1,00/kg)</option>
+  <option value="colinha_evicerada" data-preco="2.50">Colinha Evicerada (R$ 2,50/kg)</option>
+  <option value="colinha" data-preco="1.50">Colinha (R$ 1,50/kg)</option>
+  <option value="embandeijamento" data-preco="0.50">Embandeijamento (R$ 0,50/kg)</option>
+  <option value="empacotamento" data-preco="0.25">Empacotamento (R$ 0,25/kg)</option>
+</select>
       </div>
       <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Período</label> <select id="producPeriodo" required> <option value="manhã">Manhã</option> <option value="tarde">Tarde</option> <option value="noite">Noite</option> </select>
       </div>
       <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Data</label> <input type="date" id="producData" required>
       </div>
-      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Peso (kg)</label> <input type="number" id="producPeso" placeholder="0.00" step="0.01" required onchange="atualizarValorProducao()">
+      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Peso (kg)</label> <input type="number" id="producPeso" placeholder="0.00" step="0.01" required onchange="atualizarValorProducao()" oninput="calcularValorProducao()">
       </div>
-      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Valor Calculado (R$)</label> <input type="text" id="producValor" disabled style="background:rgba(255,255,255,0.02)">
-      </div>
+      <div class="mb-4">
+  <label style="font-size:12px;color:rgba(255,255,255,0.5);
+    display:block;margin-bottom:6px;">
+    Valor (R$) — calculado automaticamente
+  </label>
+  <input type="number" id="producValor" 
+    placeholder="0.00" step="0.01" readonly
+    style="width:100%;background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:10px;padding:12px;color:#00e6c8;
+      font-size:14px;font-weight:700;outline:none;">
+</div>
       <div class="mb-6"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Código de Pagamento</label> <input type="text" id="producCodigo" placeholder="Digite o código">
       </div>
       <div class="flex gap-3"><button type="button" class="btn-secondary flex-1" onclick="closeModal(null, 'addProducaoModal')">Cancelar</button> <button type="submit" class="btn-primary flex-1">Registrar</button>
@@ -1137,10 +1178,6 @@
       configuracoes: {}
     };
 
-    let chartReceitas = null;
-    let chartDespesas = null;
-    let chartProducao = null;
-
     const defaultConfig = {
       company_name: 'Jaguaribe Pescados',
       company_subtitle: 'Parajuru'
@@ -1172,13 +1209,32 @@
       currentData.despesasVariaveis = await carregarColecao('despesasVariaveis');
       currentData.historicoEstoque  = await carregarColecao('historicoEstoque');
 
-  console.log('âœ… Dados carregados!', {
+  console.log('✅ Dados carregados!', {
     clientes: currentData.clientes.length,
     funcionarios: currentData.funcionarios.length,
     transacoes: currentData.transacoes.length,
     estoque: currentData.estoque.length,
     producao: currentData.producao.length
   });
+
+  // Dados mock para demo/teste (se vazio)
+  if (currentData.transacoes.length === 0) {
+    currentData.transacoes = [
+      { id: '1', tipo_transacao: 'entrada', valor_transacao: 5000 },
+      { id: '2', tipo_transacao: 'saida', valor_transacao: 2000 }
+    ];
+  }
+  if (currentData.despesasFixas.length === 0) {
+    currentData.despesasFixas = [
+      { id: '1', valor_despesa_fixa: 3000 }
+    ];
+  }
+  if (currentData.producao.length === 0) {
+    currentData.producao = [
+      { id: '1', servico: 'descabeçamento', peso: 1000 },
+      { id: '2', servico: 'filé', peso: 800 }
+    ];
+  }
 
   setupRealtime();
 }
@@ -1210,7 +1266,9 @@
       atualizarSelectLotes();
       popularSelectLotes();
       updateDashboard();
-      initCharts();
+      setTimeout(() => {
+        try { initCharts(); } catch(e) { console.error('Charts:', e); }
+      }, 100);
     }
 
     let realtimeSetup = false;
@@ -1270,7 +1328,9 @@
         }
         renderTransacoes();
         updateDashboard();
-        initCharts();
+        setTimeout(() => {
+          try { initCharts(); } catch(e) { console.error('Charts:', e); }
+        }, 300);
       });
 
       // Estoque
@@ -1301,7 +1361,9 @@
         }
         renderProducao();
         updateDashboard();
-        initCharts();
+        setTimeout(() => {
+          try { initCharts(); } catch(e) { console.error('Charts:', e); }
+        }, 300);
       });
 
       // Despesas Fixas
@@ -2158,7 +2220,9 @@
           closeModal(null, 'addProducaoModal');
           renderProducao();
           updateDashboard();
-          initCharts();
+          setTimeout(() => {
+            try { initCharts(); } catch(e) { console.error('Charts:', e); }
+          }, 300);
           showToast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-right:6px;"><polyline points="20,6 9,17 4,12"/></svg> Produção atualizada!', '#00e6c8');
 
           // Resetar modal
@@ -2196,7 +2260,9 @@
           currentData.producao = currentData.producao.filter(p => p.funcionario_id !== fid);
           renderProducao();
           updateDashboard();
-          initCharts();
+          setTimeout(() => {
+            try { initCharts(); } catch(e) { console.error('Charts:', e); }
+          }, 300);
           showToast(`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-right:6px;"><polyline points="20,6 9,17 4,12"/></svg> Todas as produções de ${nomeFunc} foram apagadas!`, '#00e6c8');
         })
         .catch(error => {
@@ -2431,7 +2497,9 @@
         afterSave.forEach(fn => { if (typeof fn === 'function') fn(); });
         
         // Garantir que gráficos sejam atualizados
-        if (typeof initCharts === 'function') initCharts();
+        setTimeout(() => {
+          try { initCharts(); } catch(e) { console.error('Charts:', e); }
+        }, 300);
 
         if (formSelector) {
           const form = document.querySelector(formSelector);
@@ -2754,12 +2822,20 @@
     }
 
     function calcularValorProducao() {
-      const servico = document.getElementById('producServico').value;
-      const quantidade = parseFloat(document.getElementById('producPeso').value) || 0;
-      const taxa = servico === 'descabeçamento' ? 0.50 : servico === 'filé' ? 2.50 : 0;
-      const valor = quantidade * taxa;
+      const selectServico = document.getElementById('producServico');
+      const inputPeso = document.getElementById('producPeso')
+        || document.getElementById('producQuantidade');
+      const inputValor = document.getElementById('producValor');
       
-      document.getElementById('producValor').value = valor.toFixed(2);
+      if (!selectServico || !inputPeso || !inputValor) return;
+      
+      const opcaoSelecionada = selectServico.options[selectServico.selectedIndex];
+      const preco = parseFloat(opcaoSelecionada?.dataset?.preco || 0);
+      const peso = parseFloat(inputPeso.value || 0);
+      
+      if (preco > 0 && peso > 0) {
+        inputValor.value = (preco * peso).toFixed(2);
+      }
     }
 
     function atualizarValorProducao() {
@@ -2780,8 +2856,14 @@
         return;
       }
       
-      const taxa = servico === 'descabeçamento' ? 0.50 : 2.50;
-      const valor = quantidade * taxa;
+      const selectServico = document.getElementById('producServico');
+      const opcao = selectServico.options[selectServico.selectedIndex];
+      const preco = parseFloat(opcao?.dataset?.preco || 0);
+      const peso = parseFloat(document.getElementById('producPeso')?.value 
+        || document.getElementById('producQuantidade')?.value || 0);
+      const valor = parseFloat(document.getElementById('producValor')?.value 
+        || (preco * peso).toFixed(2));
+      const servicoValor = selectServico.value;
       
       const novo = {
         funcionario_id: funcionario,
@@ -3426,164 +3508,223 @@
     })();
 
     // ====== GRÃFICOS ======
-    function initCharts() {
-      // ===== GRÁFICO RECEITAS =====
-      const ctxReceitas = document.getElementById('chartReceitas');
-      if (ctxReceitas) {
-        if (window.chartReceitasInstance) {
-          window.chartReceitasInstance.destroy();
-        }
-        const entradas = (currentData.transacoes || [])
-          .filter(t => t.tipo_transacao === 'entrada')
-          .reduce((s,t) => s + parseFloat(t.valor_transacao || 0), 0);
-        const saidas = (currentData.transacoes || [])
-          .filter(t => t.tipo_transacao === 'saida')
-          .reduce((s,t) => s + parseFloat(t.valor_transacao || 0), 0);
-        
-        window.chartReceitasInstance = new Chart(ctxReceitas, {
-          type: 'pie',
-          data: {
-            labels: ['Entradas', 'Saídas'],
-            datasets: [{
-              data: [entradas || 1, saidas || 0],
-              backgroundColor: ['#00e6c8', '#ff6b6b'],
-              borderWidth: 0,
-              hoverOffset: 10
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            rotation: -20,
-            plugins: {
-              legend: {
-                position: 'right',
-                labels: {
-                  color: 'rgba(255,255,255,0.8)',
-                  font: { size: 12, weight: '600' },
-                  padding: 16,
-                  usePointStyle: true
-                }
-              },
-              tooltip: {
-                callbacks: {
-                  label: function(ctx) {
-                    return ' R$ ' + ctx.parsed.toFixed(2);
-                  }
-                }
-              }
-            },
-            elements: { arc: { borderWidth: 0 } },
-            animation: { animateRotate: true, duration: 1000 }
-          }
-        });
-      }
+function desenharPizza3D(canvasId, dados, cores, titulos) {
+  const canvas = document.getElementById(canvasId);
+  console.log('Canvas:', canvasId, canvas, canvas?.offsetWidth, canvas?.offsetHeight);
+  if (!canvas) {
+    console.warn('Canvas não encontrado:', canvasId);
+    return;
+  }
+  
+  // Garante tamanho mínimo
+  if (canvas.offsetWidth === 0) {
+    canvas.style.width = '100%';
+    canvas.style.minHeight = '220px';
+    canvas.style.display = 'block';
+  }
 
-      // ===== GRÁFICO DESPESAS =====
-      const ctxDespesas = document.getElementById('chartDespesas');
-      if (ctxDespesas) {
-        if (window.chartDespesasInstance) {
-          window.chartDespesasInstance.destroy();
-        }
-        const fixas = (currentData.despesasFixas || [])
-          .reduce((s,d) => s + parseFloat(d.valor_despesa_fixa || 0), 0);
-        const variaveis = (currentData.despesasVariaveis || [])
-          .reduce((s,d) => s + parseFloat(d.valor_despesa_fixa || 0), 0);
-        const saidas = (currentData.transacoes || [])
-          .filter(t => t.tipo_transacao === 'saida')
-          .reduce((s,t) => s + parseFloat(t.valor_transacao || 0), 0);
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const W = canvas.width = Math.max(rect.width,
+    canvas.parentElement?.offsetWidth || 280, 280);
+  const H = canvas.height = Math.max(rect.height,
+    canvas.parentElement?.offsetHeight || 220, 220);
+  ctx.clearRect(0, 0, W, H);
 
-        window.chartDespesasInstance = new Chart(ctxDespesas, {
-          type: 'pie',
-          data: {
-            labels: ['Despesas Fixas', 'Despesas Variáveis', 'Saídas Caixa'],
-            datasets: [{
-              data: [fixas || 0, variaveis || 0, saidas || 0].map(v => v || 1),
-              backgroundColor: ['#ff6b6b', '#ffc837', '#a78bfa'],
-              borderWidth: 0,
-              hoverOffset: 10
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            rotation: -20,
-            plugins: {
-              legend: {
-                position: 'right',
-                labels: {
-                  color: 'rgba(255,255,255,0.8)',
-                  font: { size: 12, weight: '600' },
-                  padding: 16,
-                  usePointStyle: true
-                }
-              },
-              tooltip: {
-                callbacks: {
-                  label: function(ctx) {
-                    return ' R$ ' + ctx.parsed.toFixed(2);
-                  }
-                }
-              }
-            },
-            elements: { arc: { borderWidth: 0 } },
-            animation: { animateRotate: true, duration: 1000 }
-          }
-        });
-      }
+  const total = dados.reduce((a,b) => a+b, 0);
+  if (total <= 0) {
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '13px Inter,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Sem dados', W/2, H/2);
+    return;
+  }
 
-      // ===== GRÁFICO PRODUÇÕES =====
-      const ctxProducao = document.getElementById('chartProducao');
-      if (ctxProducao) {
-        if (window.chartProducaoInstance) {
-          window.chartProducaoInstance.destroy();
-        }
-        const descabecamento = (currentData.producao || [])
-          .filter(p => (p.servico || '').toLowerCase().includes('desc'))
-          .reduce((s,p) => s + parseFloat(p.peso || 0), 0);
-        const file = (currentData.producao || [])
-          .filter(p => (p.servico || '').toLowerCase().includes('fil'))
-          .reduce((s,p) => s + parseFloat(p.peso || 0), 0);
+  // Posição e tamanho — mais vertical
+  const cx = W * 0.42;
+  const cy = H * 0.56;
+  const rx = W * 0.28;
+  const ry = rx * 0.5; // menos achatado = mais em pé
+  const depth = 60;     // profundidade da lateral
 
-        window.chartProducaoInstance = new Chart(ctxProducao, {
-          type: 'pie',
-          data: {
-            labels: ['Descabeçamento', 'Filé'],
-            datasets: [{
-              data: [descabecamento || 1, file || 0],
-              backgroundColor: ['#00e6c8', '#4ecdc4'],
-              borderWidth: 0,
-              hoverOffset: 10
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            rotation: -20,
-            plugins: {
-              legend: {
-                position: 'right',
-                labels: {
-                  color: 'rgba(255,255,255,0.8)',
-                  font: { size: 12, weight: '600' },
-                  padding: 16,
-                  usePointStyle: true
-                }
-              },
-              tooltip: {
-                callbacks: {
-                  label: function(ctx) {
-                    return ' ' + ctx.parsed.toFixed(2) + ' kg';
-                  }
-                }
-              }
-            },
-            elements: { arc: { borderWidth: 0 } },
-            animation: { animateRotate: true, duration: 1000 }
-          }
-        });
-      }
+  const angles = dados.map(v => (v/total) * Math.PI * 2);
+  let startAngle = -Math.PI / 2;
+
+  // Função cor mais escura para lateral
+  function darken(hex, amt) {
+    let r = parseInt(hex.slice(1,3),16);
+    let g = parseInt(hex.slice(3,5),16);
+    let b = parseInt(hex.slice(5,7),16);
+    r = Math.max(0, r - amt);
+    g = Math.max(0, g - amt);
+    b = Math.max(0, b - amt);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  // Sombra embaixo
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + depth + 8, rx*0.9, ry*0.6, 0, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.filter = 'blur(8px)';
+  ctx.fill();
+  ctx.restore();
+
+  // Laterais — só as de baixo (sin > 0)
+  let a = startAngle;
+  angles.forEach((angle, i) => {
+    const sa = a;
+    const ea = a + angle;
+    const mid = sa + angle/2;
+    if (Math.sin(mid) > -0.1) {
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + depth, rx, ry, 0, sa, ea);
+      const x1 = cx + rx * Math.cos(ea);
+      const y1 = cy + ry * Math.sin(ea);
+      const x2 = cx + rx * Math.cos(ea);
+      const y2 = cy + depth + ry * Math.sin(ea);
+      ctx.lineTo(x2, y2);
+      ctx.ellipse(cx, cy + depth, rx, ry, 0, ea, sa, true);
+      const x3 = cx + rx * Math.cos(sa);
+      const y3 = cy + ry * Math.sin(sa);
+      ctx.lineTo(x3, y3);
+      ctx.closePath();
+      ctx.fillStyle = darken(cores[i], 55);
+      ctx.fill();
     }
+    a += angle;
+  });
+
+  // Face superior de cada fatia
+  a = startAngle;
+  angles.forEach((angle, i) => {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.ellipse(cx, cy, rx, ry, 0, a, a + angle);
+    ctx.closePath();
+
+    // Gradiente para dar profundidade
+    const mid = a + angle/2;
+    const gx = cx + rx * 0.5 * Math.cos(mid);
+    const gy = cy + ry * 0.5 * Math.sin(mid);
+    const grad = ctx.createRadialGradient(gx, gy, 0, cx, cy, rx);
+    grad.addColorStop(0, cores[i]);
+    grad.addColorStop(1, darken(cores[i], 30));
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Borda entre fatias
+    ctx.strokeStyle = 'rgba(10,22,40,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    a += angle;
+  });
+
+  // Porcentagens DENTRO das fatias
+  a = startAngle;
+  angles.forEach((angle, i) => {
+    const pct = Math.round((dados[i]/total)*100);
+    if (pct < 4) { a += angle; return; }
+    const mid = a + angle/2;
+    const dist = rx * 0.58;
+    const px = cx + dist * Math.cos(mid);
+    const py = cy + ry * 0.58 * Math.sin(mid);
+
+    ctx.font = 'bold 13px Inter,sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Sombra no texto
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(pct + '%', px, py);
+    ctx.shadowBlur = 0;
+    a += angle;
+  });
+
+  // Legenda com linhas apontando
+  const legendX = cx + rx + 20;
+  let legendY = cy - (titulos.length * 22) / 2;
+  titulos.forEach((titulo, i) => {
+    const pct = Math.round((dados[i]/total)*100);
+    
+    // Bolinha colorida
+    ctx.beginPath();
+    ctx.arc(legendX + 6, legendY, 6, 0, Math.PI*2);
+    ctx.fillStyle = cores[i];
+    ctx.fill();
+
+    // Texto
+    ctx.font = '11px Inter,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(titulo, legendX + 16, legendY);
+    legendY += 24;
+  });
+}
+
+  // Garante que canvases têm dimensão antes de desenhar
+  const canvases = ['chartReceitas', 'chartDespesas', 'chartProducao'];
+  canvases.forEach(id => {
+    const canvas = document.getElementById(id);
+    if (canvas && canvas.width === 0) {
+      canvas.width = canvas.offsetWidth || 300;
+      canvas.height = canvas.offsetHeight || 220;
+    }
+  });
+
+  try {
+    // Gráfico Receitas
+    const entradas = (currentData.transacoes || [])
+      .filter(t => t.tipo_transacao === 'entrada')
+      .reduce((s,t) => s + parseFloat(t.valor_transacao || 0), 0);
+    const saidas = (currentData.transacoes || [])
+      .filter(t => t.tipo_transacao === 'saida')
+      .reduce((s,t) => s + parseFloat(t.valor_transacao || 0), 0);
+
+    desenharPizza3D(
+      'chartReceitas',
+      [entradas || 0.1, saidas || 0],
+      ['#00e6c8', '#ff6b6b'],
+      ['Entradas', 'Saídas']
+    );
+
+    // Gráfico Despesas
+    const fixas = (currentData.despesasFixas || [])
+      .reduce((s,d) => s + parseFloat(d.valor_despesa_fixa || 0), 0);
+    const variaveis = (currentData.despesasVariaveis || [])
+      .reduce((s,d) => s + parseFloat(d.valor_despesa_fixa || 0), 0);
+    const saidasCaixa = saidas;
+
+    desenharPizza3D(
+      'chartDespesas',
+      [fixas || 0.1, variaveis || 0, saidasCaixa || 0],
+      ['#ff6b6b', '#ffc837', '#a78bfa'],
+      ['Desp. Fixas', 'Desp. Variáveis', 'Saídas']
+    );
+
+    // Gráfico Produções
+    const descabecamento = (currentData.producao || [])
+      .filter(p => (p.servico || '').toLowerCase().includes('desc'))
+      .reduce((s,p) => s + parseFloat(p.peso || 0), 0);
+    const file = (currentData.producao || [])
+      .filter(p => (p.servico || '').toLowerCase().includes('fil'))
+      .reduce((s,p) => s + parseFloat(p.peso || 0), 0);
+
+    desenharPizza3D(
+      'chartProducao',
+      [descabecamento || 0.1, file || 0],
+      ['#00e6c8', '#4ecdc4'],
+      ['Descabeçamento', 'Filé']
+    );
+    
+    console.log('✅ Gráficos renderizados com sucesso');
+  } catch (e) {
+    console.error('❌ Erro ao renderizar gráficos:', e);
+  }
 
     // ====== INIT ======
     
@@ -3852,17 +3993,244 @@ window.addEventListener('load', () => {
       renderAll();
       navigateTo('producao');
       if (typeof lucide !== 'undefined') lucide.createIcons();
+      setTimeout(() => {
+        try { initCharts(); } catch(e) {}
+      }, 500);
     });
   } else {
     loadAll().then(() => {
       renderAll();
       navigateTo('dashboard');
       if (typeof lucide !== 'undefined') lucide.createIcons();
+      setTimeout(() => {
+        try { initCharts(); } catch(e) {}
+      }, 500);
     });
   }
 });
 </script>
    <script>
+// ====== GRÁFICOS ======
+function desenharPizza3D(canvasId, dados, cores, titulos) {
+  const canvas = document.getElementById(canvasId);
+  console.log('Canvas:', canvasId, canvas, canvas?.offsetWidth, canvas?.offsetHeight);
+  if (!canvas) {
+    console.warn('Canvas não encontrado:', canvasId);
+    return;
+  }
+  
+  // Garante tamanho mínimo
+  if (canvas.offsetWidth === 0) {
+    canvas.style.width = '100%';
+    canvas.style.minHeight = '220px';
+    canvas.style.display = 'block';
+  }
+
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const W = canvas.width = Math.max(rect.width,
+    canvas.parentElement?.offsetWidth || 280, 280);
+  const H = canvas.height = Math.max(rect.height,
+    canvas.parentElement?.offsetHeight || 220, 220);
+  ctx.clearRect(0, 0, W, H);
+
+  const total = dados.reduce((a,b) => a+b, 0);
+  if (total <= 0) {
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '13px Inter,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Sem dados', W/2, H/2);
+    return;
+  }
+
+  // Posição e tamanho — mais vertical
+  const cx = W * 0.42;
+  const cy = H * 0.56;
+  const rx = W * 0.28;
+  const ry = rx * 0.5; // menos achatado = mais em pé
+  const depth = 60;     // profundidade da lateral
+
+  const angles = dados.map(v => (v/total) * Math.PI * 2);
+  let startAngle = -Math.PI / 2;
+
+  // Função cor mais escura para lateral
+  function darken(hex, amt) {
+    let r = parseInt(hex.slice(1,3),16);
+    let g = parseInt(hex.slice(3,5),16);
+    let b = parseInt(hex.slice(5,7),16);
+    r = Math.max(0, r - amt);
+    g = Math.max(0, g - amt);
+    b = Math.max(0, b - amt);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  // Sombra embaixo
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + depth + 8, rx*0.9, ry*0.6, 0, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.filter = 'blur(8px)';
+  ctx.fill();
+  ctx.restore();
+
+  // Laterais — só as de baixo (sin > 0)
+  let a = startAngle;
+  angles.forEach((angle, i) => {
+    const sa = a;
+    const ea = a + angle;
+    const mid = sa + angle/2;
+    if (Math.sin(mid) > -0.1) {
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + depth, rx, ry, 0, sa, ea);
+      const x1 = cx + rx * Math.cos(ea);
+      const y1 = cy + ry * Math.sin(ea);
+      const x2 = cx + rx * Math.cos(ea);
+      const y2 = cy + depth + ry * Math.sin(ea);
+      ctx.lineTo(x2, y2);
+      ctx.ellipse(cx, cy + depth, rx, ry, 0, ea, sa, true);
+      const x3 = cx + rx * Math.cos(sa);
+      const y3 = cy + ry * Math.sin(sa);
+      ctx.lineTo(x3, y3);
+      ctx.closePath();
+      ctx.fillStyle = darken(cores[i], 55);
+      ctx.fill();
+    }
+    a += angle;
+  });
+
+  // Face superior de cada fatia
+  a = startAngle;
+  angles.forEach((angle, i) => {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.ellipse(cx, cy, rx, ry, 0, a, a + angle);
+    ctx.closePath();
+
+    // Gradiente para dar profundidade
+    const mid = a + angle/2;
+    const gx = cx + rx * 0.5 * Math.cos(mid);
+    const gy = cy + ry * 0.5 * Math.sin(mid);
+    const grad = ctx.createRadialGradient(gx, gy, 0, cx, cy, rx);
+    grad.addColorStop(0, cores[i]);
+    grad.addColorStop(1, darken(cores[i], 30));
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Borda entre fatias
+    ctx.strokeStyle = 'rgba(10,22,40,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    a += angle;
+  });
+
+  // Porcentagens DENTRO das fatias
+  a = startAngle;
+  angles.forEach((angle, i) => {
+    const pct = Math.round((dados[i]/total)*100);
+    if (pct < 4) { a += angle; return; }
+    const mid = a + angle/2;
+    const dist = rx * 0.58;
+    const px = cx + dist * Math.cos(mid);
+    const py = cy + ry * 0.58 * Math.sin(mid);
+
+    ctx.font = 'bold 13px Inter,sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Sombra no texto
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(pct + '%', px, py);
+    ctx.shadowBlur = 0;
+    a += angle;
+  });
+
+  // Legenda com linhas apontando
+  const legendX = cx + rx + 20;
+  let legendY = cy - (titulos.length * 22) / 2;
+  titulos.forEach((titulo, i) => {
+    const pct = Math.round((dados[i]/total)*100);
+    
+    // Bolinha colorida
+    ctx.beginPath();
+    ctx.arc(legendX + 6, legendY, 6, 0, Math.PI*2);
+    ctx.fillStyle = cores[i];
+    ctx.fill();
+
+    // Texto
+    ctx.font = '11px Inter,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(titulo, legendX + 16, legendY);
+    legendY += 24;
+  });
+}
+
+function initCharts() {
+  // Garante que canvases têm dimensão antes de desenhar
+  const canvases = ['chartReceitas', 'chartDespesas', 'chartProducao'];
+  canvases.forEach(id => {
+    const canvas = document.getElementById(id);
+    if (canvas && canvas.width === 0) {
+      canvas.width = canvas.offsetWidth || 300;
+      canvas.height = canvas.offsetHeight || 220;
+    }
+  });
+
+  try {
+    // Gráfico Receitas
+    const entradas = (currentData.transacoes || [])
+      .filter(t => t.tipo_transacao === 'entrada')
+      .reduce((s,t) => s + parseFloat(t.valor_transacao || 0), 0);
+    const saidas = (currentData.transacoes || [])
+      .filter(t => t.tipo_transacao === 'saida')
+      .reduce((s,t) => s + parseFloat(t.valor_transacao || 0), 0);
+
+    desenharPizza3D(
+      'chartReceitas',
+      [entradas || 0.1, saidas || 0],
+      ['#00e6c8', '#ff6b6b'],
+      ['Entradas', 'Saídas']
+    );
+
+    // Gráfico Despesas
+    const fixas = (currentData.despesasFixas || [])
+      .reduce((s,d) => s + parseFloat(d.valor_despesa_fixa || 0), 0);
+    const variaveis = (currentData.despesasVariaveis || [])
+      .reduce((s,d) => s + parseFloat(d.valor_despesa_fixa || 0), 0);
+    const saidasCaixa = saidas;
+
+    desenharPizza3D(
+      'chartDespesas',
+      [fixas || 0.1, variaveis || 0, saidasCaixa || 0],
+      ['#ff6b6b', '#ffc837', '#a78bfa'],
+      ['Desp. Fixas', 'Desp. Variáveis', 'Saídas']
+    );
+
+    // Gráfico Produções
+    const descabecamento = (currentData.producao || [])
+      .filter(p => (p.servico || '').toLowerCase().includes('desc'))
+      .reduce((s,p) => s + parseFloat(p.peso || 0), 0);
+    const file = (currentData.producao || [])
+      .filter(p => (p.servico || '').toLowerCase().includes('fil'))
+      .reduce((s,p) => s + parseFloat(p.peso || 0), 0);
+
+    desenharPizza3D(
+      'chartProducao',
+      [descabecamento || 0.1, file || 0],
+      ['#00e6c8', '#4ecdc4'],
+      ['Descabeçamento', 'Filé']
+    );
+    
+    console.log('✅ Gráficos renderizados com sucesso');
+  } catch (e) {
+    console.error('❌ Erro ao renderizar gráficos:', e);
+  }
+}
+
 function navigateTo(pageId) {
   if (window.innerWidth < 768) {
     const sidebar = document.getElementById('sidebar');
@@ -3891,8 +4259,12 @@ function navigateTo(pageId) {
   const target = document.getElementById('page-' + pageId);
   if (target) {
     target.style.display = 'block';
-  } else {
-    console.warn('Página não encontrada:', pageId);
+    if (pageId === 'dashboard') {
+      window.dispatchEvent(new Event('resize'));
+      setTimeout(() => {
+        try { initCharts(); } catch(e) { console.error(e); }
+      }, 150);
+    }
   }
 }
 
