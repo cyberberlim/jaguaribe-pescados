@@ -1217,24 +1217,7 @@
     producao: currentData.producao.length
   });
 
-  // Dados mock para demo/teste (se vazio)
-  if (currentData.transacoes.length === 0) {
-    currentData.transacoes = [
-      { id: '1', tipo_transacao: 'entrada', valor_transacao: 5000 },
-      { id: '2', tipo_transacao: 'saida', valor_transacao: 2000 }
-    ];
-  }
-  if (currentData.despesasFixas.length === 0) {
-    currentData.despesasFixas = [
-      { id: '1', valor_despesa_fixa: 3000 }
-    ];
-  }
-  if (currentData.producao.length === 0) {
-    currentData.producao = [
-      { id: '1', servico: 'descabeçamento', peso: 1000 },
-      { id: '2', servico: 'filé', peso: 800 }
-    ];
-  }
+
 
   setupRealtime();
 }
