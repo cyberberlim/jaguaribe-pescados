@@ -904,11 +904,48 @@
         </div>
        </div><!-- PRODUÇÃO PAGE -->
        <div id="page-producao" class="page-content fade-in hidden">
+        <div style="background:rgba(0,230,200,0.06);border:1px solid rgba(0,230,200,0.2);border-radius:16px;padding:20px;margin-bottom:24px;">
+          <div style="font-size:14px;font-weight:700;color:#00e6c8;margin-bottom:16px;">Configuração do Turno</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;">
+            <div>
+              <label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px;">Data do Turno</label>
+              <input type="date" id="globalData" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;color:#fff;font-size:13px;outline:none;">
+            </div>
+            <div>
+              <label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px;">Turno</label>
+              <select id="globalTurno" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;color:#fff;font-size:13px;outline:none;">
+                <option value="manha">Manhã</option>
+                <option value="tarde">Tarde</option>
+                <option value="noite">Noite</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px;">Serviço</label>
+              <select id="globalServico" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;color:#fff;font-size:13px;outline:none;">
+                <option value="">Selecione...</option>
+                <option value="descabecamento" data-preco="0.50">Descabeçamento (R$0,50)</option>
+                <option value="file" data-preco="1.50">Filé (R$1,50)</option>
+                <option value="file_evicerado" data-preco="2.50">Filé Evicerado (R$2,50)</option>
+                <option value="eviceramento" data-preco="1.00">Eviceramento (R$1,00)</option>
+                <option value="colinha_evicerada" data-preco="2.50">Colinha Evicerada (R$2,50)</option>
+                <option value="colinha" data-preco="1.50">Colinha (R$1,50)</option>
+                <option value="embandeijamento" data-preco="0.50">Embandeijamento (R$0,50)</option>
+                <option value="empacotamento" data-preco="0.25">Empacotamento (R$0,25)</option>
+                <option value="tail-on" data-preco="2.50">Tail-on (R$2,50)</option>
+                <option value="tail-on-300" data-preco="3.00">Tail-on (R$3,00)</option>
+                <option value="ppv" data-preco="2.50">PPV (R$2,50)</option>
+              </select>
+            </div>
+            <button onclick="aplicarConfiguracaoGlobal()" style="background:linear-gradient(135deg,#00e6c8,#00b89e);color:#0a1628;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">Aplicar a Todos</button>
+          </div>
+          <div id="globalStatus" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.4);">Selecione data, turno e serviço para preencher automaticamente ao registrar produção</div>
+        </div>
         <div class="mb-6 flex items-center justify-between">
          <div>
           <h2 class="font-heading text-2xl font-bold">Produção</h2>
           <p class="text-sm" style="color:rgba(255,255,255,0.4)">Registro de produção por funcionário</p>
-         </div><button class="btn-primary flex items-center gap-2" onclick="openModal('addProducaoModal')"> <i data-lucide="plus" style="width:18px;height:18px"></i>Registrar </button>
+         </div><div style="display:flex;gap:8px;align-items:center;"><button class="btn-primary flex items-center gap-2" onclick="openModal('addProducaoModal')"> <i data-lucide="plus" style="width:18px;height:18px"></i>Registrar </button>
+         <button onclick="exportarDossieProducao()" style="background:rgba(0,230,200,0.1);border:1px solid rgba(0,230,200,0.3);border-radius:10px;padding:10px 18px;color:#00e6c8;font-size:13px;font-weight:600;cursor:pointer;">↓ Dossiê PDF</button></div>
         </div>
         <div id="producaoList" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
         <div id="producaoEmpty" class="text-center py-12"><i data-lucide="factory" style="width:48px;height:48px;margin:0 auto 12px;opacity:0.3"></i>
@@ -1622,6 +1659,19 @@
       if (modal) {
         modal.classList.remove('hidden');
         if (typeof lucide !== 'undefined') lucide.createIcons();
+        // Preencher modal de produção com configuração global, se houver
+        if (id === 'addProducaoModal' && window.globalProducao) {
+          const g = window.globalProducao;
+          const campoData = document.getElementById('producData') || document.querySelector('[id*="producao"][id*="ata"]');
+          if (campoData) campoData.value = g.data;
+          const campoTurno = document.getElementById('producPeriodo') || document.getElementById('producaoTurno') || document.querySelector('[id*="periodo"],[id*="turno"]');
+          if (campoTurno) campoTurno.value = g.turno;
+          const campoServico = document.getElementById('producServico') || document.querySelector('[id*="servico"]');
+          if (campoServico) {
+            campoServico.value = g.servico;
+            campoServico.dispatchEvent(new Event('change'));
+          }
+        }
       }
     }
 
@@ -2120,7 +2170,7 @@
         body: registros
           .sort((a, b) => new Date(b.data_producao) - new Date(a.data_producao))
           .map(p => [
-            p.data_producao ? p.data_producao.split('T')[0] : '—',
+            p.data_producao ? formatarDataProducao(p.data_producao) : '—',
             p.periodo || '—',
             p.servico || '—',
             parseFloat(p.peso || 0).toFixed(2),
@@ -2142,6 +2192,123 @@
       const nomeArquivo = `producao-${nomeFunc.toLowerCase().replace(/\s+/g, '-')}-${dataHoje}.pdf`;
       doc.save(nomeArquivo);
       showToast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-right:6px;"><polyline points="20,6 9,17 4,12"/></svg> PDF gerado!', '#00e6c8');
+    }
+
+    function exportarDossieProducao() {
+      const { jsPDF } = window.jspdf;
+      if (!jsPDF) {
+        showToast('Biblioteca PDF não carregada!', '#ff6b6b');
+        return;
+      }
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageW = doc.internal.pageSize.getWidth();
+      let y = 15;
+
+      doc.setFillColor(10, 22, 40);
+      doc.rect(0, 0, pageW, 30, 'F');
+      doc.setTextColor(0, 230, 200);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Jaguaribe Pescados', 14, 13);
+      doc.setFontSize(11);
+      doc.setTextColor(200, 200, 200);
+      doc.text('Dossiê de Produção — Completo', 14, 22);
+      doc.setFontSize(9);
+      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), pageW - 14, 22, {align:'right'});
+      y = 38;
+
+      const porFunc = {};
+      (currentData.producao || []).forEach(p => {
+        const fid = p.funcionario_id || 'sem';
+        if (!porFunc[fid]) porFunc[fid] = [];
+        porFunc[fid].push(p);
+      });
+
+      let totalGeral = 0;
+      let totalPesoGeral = 0;
+
+      Object.keys(porFunc).forEach(fid => {
+        const func = currentData.funcionarios.find(f => f.id === fid);
+        const nome = func ? func.nome : 'Funcionário';
+        const registros = porFunc[fid].sort((a,b) => new Date(a.data_producao) - new Date(b.data_producao));
+        const totalFunc = registros.reduce((s,p) => s+parseFloat(p.valor||0),0);
+        const pesoFunc = registros.reduce((s,p) => s+parseFloat(p.peso||0),0);
+        const pago = registros.every(p => p.codigo_pagamento);
+
+        totalGeral += totalFunc;
+        totalPesoGeral += pesoFunc;
+
+        if (y > 260) { doc.addPage(); y = 15; }
+
+        doc.setFillColor(20, 40, 60);
+        doc.rect(10, y-4, pageW-20, 10, 'F');
+        doc.setTextColor(0, 230, 200);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text(nome, 14, y+3);
+        doc.setFontSize(9);
+        doc.setTextColor(pago ? 200 : 180, pago ? 200 : 180, pago ? 150 : 0);
+        doc.text(pago ? 'PAGO' : 'PENDENTE', pageW-14, y+3, {align:'right'});
+        y += 12;
+
+        doc.autoTable({
+          startY: y,
+          head: [['Data','Serviço','Peso (kg)','Valor (R$)']],
+          body: registros.map(p => [
+            formatarDataProducao(p.data_producao),
+            p.servico || '—',
+            parseFloat(p.peso||0).toFixed(2),
+            'R$ ' + parseFloat(p.valor||0).toFixed(2)
+          ]),
+          foot: [['','TOTAL',pesoFunc.toFixed(2),'R$ '+totalFunc.toFixed(2)]],
+          theme: 'striped',
+          headStyles: {fillColor:[0,100,90],textColor:[255,255,255],fontSize:8},
+          bodyStyles: {fontSize:8,textColor:[50,50,50]},
+          footStyles: {fillColor:[220,250,245],textColor:[0,100,80],fontStyle:'bold',fontSize:8},
+          margin: {left:10, right:10},
+          tableWidth: pageW-20
+        });
+
+        y = doc.lastAutoTable.finalY + 10;
+      });
+
+      doc.addPage(); y = 20;
+      doc.setFillColor(10, 22, 40);
+      doc.rect(0, 0, pageW, 25, 'F');
+      doc.setTextColor(0, 230, 200);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Resumo Geral', 14, 16);
+      y = 35;
+
+      doc.autoTable({
+        startY: y,
+        head: [['Funcionário','Registros','Peso Total (kg)','Valor Total (R$)','Status']],
+        body: Object.keys(porFunc).map(fid => {
+          const func = currentData.funcionarios.find(f => f.id === fid);
+          const regs = porFunc[fid];
+          const peso = regs.reduce((s,p)=>s+parseFloat(p.peso||0),0);
+          const valor = regs.reduce((s,p)=>s+parseFloat(p.valor||0),0);
+          const pago = regs.every(p=>p.codigo_pagamento);
+          return [
+            func ? func.nome : 'N/A',
+            regs.length,
+            peso.toFixed(2),
+            'R$ '+valor.toFixed(2),
+            pago ? 'Pago' : 'Pendente'
+          ];
+        }),
+        foot: [['TOTAL GERAL','',totalPesoGeral.toFixed(2),'R$ '+totalGeral.toFixed(2),'']],
+        theme: 'striped',
+        headStyles: {fillColor:[0,100,90],textColor:[255,255,255],fontSize:8},
+        bodyStyles: {fontSize:8},
+        footStyles: {fillColor:[220,250,245],textColor:[0,100,80],fontStyle:'bold',fontSize:9},
+        margin: {left:10, right:10}
+      });
+
+      const dataHoje = new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+      doc.save('dossie-producao-' + dataHoje + '.pdf');
+      showToast('Dossiê gerado com sucesso!', '#00e6c8');
     }
 
     function apagarProducao(id) {
@@ -2207,7 +2374,7 @@
         peso: quantidade,
         valor: valor,
         codigo_pagamento: codigo,
-        data_producao: new Date(dataProducao).toISOString()
+        data_producao: dataProducao + 'T12:00:00.000Z'
       };
 
       pb.collection('producao').update(id, dadosAtualizados)
@@ -2842,6 +3009,31 @@
       calcularValorProducao();
     }
 
+    function formatarDataProducao(dataStr) {
+      if (!dataStr) return 'Sem data';
+      const d = new Date(dataStr);
+      if (isNaN(d.getTime())) return dataStr;
+      const local = new Date(d.getTime() + d.getTimezoneOffset() * -60000);
+      return local.toLocaleDateString('pt-BR');
+    }
+
+    function aplicarConfiguracaoGlobal() {
+      const data = document.getElementById('globalData').value;
+      const turno = document.getElementById('globalTurno').value;
+      const servicoEl = document.getElementById('globalServico');
+      const servico = servicoEl.value;
+      if (!data || !servico) {
+        showToast('Selecione data e serviço!', '#ffc837');
+        return;
+      }
+      window.globalProducao = { data, turno, servico };
+      const nomeServico = servicoEl.options[servicoEl.selectedIndex].text;
+      const dataFormatada = new Date(data + 'T12:00:00').toLocaleDateString('pt-BR');
+      document.getElementById('globalStatus').innerHTML = '<span style="color:#00e6c8;font-weight:600;">✓ Configurado: ' + dataFormatada + ' | ' + turno + ' | ' + nomeServico + '</span>';
+      showToast('Configuração aplicada! Agora é só informar o peso de cada funcionário.', '#00e6c8');
+    }
+
+
    async function salvarProducao(e) {
       e.preventDefault();
       
@@ -2872,7 +3064,7 @@
         peso: quantidade,
         valor: valor,
         codigo_pagamento: '',
-        data_producao: new Date(dataProducao).toISOString()
+        data_producao: dataProducao + 'T12:00:00.000Z'
       };
 
       await saveRecord({
@@ -3136,7 +3328,7 @@
 
         return `
           <tr style="border-bottom:1px solid rgba(255,255,255,0.06);hover:background rgba(255,255,255,0.02);">
-            <td class="py-3 px-4" style="color:rgba(255,255,255,0.7)">${new Date(p.data_producao).toLocaleDateString('pt-BR')}</td>
+            <td class="py-3 px-4" style="color:rgba(255,255,255,0.7)">${formatarDataProducao(p.data_producao)}</td>
             <td class="py-3 px-4">${func ? func.nome : 'N/A'}</td>
             <td class="py-3 px-4">${servicoNome}</td>
             <td class="py-3 px-4 text-center" style="color:#00e6c8;font-weight:600">${p.peso} kg</td>
@@ -3269,7 +3461,7 @@
       // 4. GRÃFICO TIMELINE
       const producaoPorDia = {};
       producao.forEach(p => {
-        const data = new Date(p.data_producao).toLocaleDateString('pt-BR');
+        const data = formatarDataProducao(p.data_producao);
         if (!producaoPorDia[data]) {
           producaoPorDia[data] = 0;
         }
@@ -3404,7 +3596,7 @@
             p.periodo || '',
             (parseFloat(p.peso) || 0).toFixed(2),
             'R$ ' + (parseFloat(p.valor) || 0).toFixed(2),
-            p.data_producao ? new Date(p.data_producao).toLocaleDateString('pt-BR') : ''
+            p.data_producao ? formatarDataProducao(p.data_producao) : ''
           ];
         }),
         foot: [['', '', 'TOTAL', totalPeso.toFixed(2) + ' kg', 'R$ ' + totalValor.toFixed(2), '']],
@@ -3507,164 +3699,158 @@
       check();
     })();
 
-    // ====== GRÃFICOS ======
-function desenharPizza3D(canvasId, dados, cores, titulos) {
-  const canvas = document.getElementById(canvasId);
-  console.log('Canvas:', canvasId, canvas, canvas?.offsetWidth, canvas?.offsetHeight);
-  if (!canvas) {
-    console.warn('Canvas não encontrado:', canvasId);
-    return;
-  }
-  
-  // Garante tamanho mínimo
-  if (canvas.offsetWidth === 0) {
-    canvas.style.width = '100%';
-    canvas.style.minHeight = '220px';
-    canvas.style.display = 'block';
-  }
-
-  const ctx = canvas.getContext('2d');
-  const rect = canvas.getBoundingClientRect();
-  const W = canvas.width = Math.max(rect.width,
-    canvas.parentElement?.offsetWidth || 280, 280);
-  const H = canvas.height = Math.max(rect.height,
-    canvas.parentElement?.offsetHeight || 220, 220);
-  ctx.clearRect(0, 0, W, H);
-
-  const total = dados.reduce((a,b) => a+b, 0);
-  if (total <= 0) {
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.font = '13px Inter,sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Sem dados', W/2, H/2);
-    return;
-  }
-
-  // Posição e tamanho — mais vertical
-  const cx = W * 0.42;
-  const cy = H * 0.56;
-  const rx = W * 0.28;
-  const ry = rx * 0.5; // menos achatado = mais em pé
-  const depth = 60;     // profundidade da lateral
-
-  const angles = dados.map(v => (v/total) * Math.PI * 2);
-  let startAngle = -Math.PI / 2;
-
-  // Função cor mais escura para lateral
-  function darken(hex, amt) {
-    let r = parseInt(hex.slice(1,3),16);
-    let g = parseInt(hex.slice(3,5),16);
-    let b = parseInt(hex.slice(5,7),16);
-    r = Math.max(0, r - amt);
-    g = Math.max(0, g - amt);
-    b = Math.max(0, b - amt);
-    return `rgb(${r},${g},${b})`;
-  }
-
-  // Sombra embaixo
-  ctx.save();
-  ctx.beginPath();
-  ctx.ellipse(cx, cy + depth + 8, rx*0.9, ry*0.6, 0, 0, Math.PI*2);
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.filter = 'blur(8px)';
-  ctx.fill();
-  ctx.restore();
-
-  // Laterais — só as de baixo (sin > 0)
-  let a = startAngle;
-  angles.forEach((angle, i) => {
-    const sa = a;
-    const ea = a + angle;
-    const mid = sa + angle/2;
-    if (Math.sin(mid) > -0.1) {
+    // ====== GRÁFICOS ======
+    function desenharPizza3D(canvasId, dados, cores, titulos) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) { console.warn('Canvas não encontrado:', canvasId); return; }
+      if (canvas.offsetWidth === 0) {
+        canvas.style.width = '100%';
+        canvas.style.minHeight = '220px';
+        canvas.style.display = 'block';
+      }
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const W = Math.max(rect.width, canvas.parentElement?.offsetWidth || 280, 280);
+      const H = Math.max(rect.height, canvas.parentElement?.offsetHeight || 220, 220);
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width  = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, W, H);
+      const total = dados.reduce((a, b) => a + b, 0);
+      if (total <= 0) {
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.font = '13px Inter,sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Sem dados', W / 2, H / 2);
+        return;
+      }
+      const legendW = 110;
+      const cx   = (W - legendW) * 0.50;
+      const cy   = H * 0.46;
+      const rx   = Math.min((W - legendW) * 0.36, 100);
+      const ry   = rx * 0.42;
+      const depth = Math.round(rx * 0.32);
+      const EXPLODE = dados.length > 1 ? rx * 0.10 : 0;
+      const GAP_BG  = '#0a1628';
+      function darken(hex, amt) {
+        let r = parseInt(hex.slice(1,3),16);
+        let g = parseInt(hex.slice(3,5),16);
+        let b = parseInt(hex.slice(5,7),16);
+        return `rgb(${Math.max(0,r-amt)},${Math.max(0,g-amt)},${Math.max(0,b-amt)})`;
+      }
+      const segs = [];
+      let startA = -Math.PI / 2;
+      dados.forEach((v, i) => {
+        const sweep = (v / total) * Math.PI * 2;
+        const mid   = startA + sweep / 2;
+        segs.push({
+          sa: startA, ea: startA + sweep, mid,
+          color: cores[i], dark: darken(cores[i], 60),
+          ex: Math.cos(mid) * EXPLODE,
+          ey: Math.sin(mid) * EXPLODE,
+          pct: Math.round((v / total) * 100),
+          label: titulos[i]
+        });
+        startA += sweep;
+      });
+      ctx.save();
       ctx.beginPath();
-      ctx.ellipse(cx, cy + depth, rx, ry, 0, sa, ea);
-      const x1 = cx + rx * Math.cos(ea);
-      const y1 = cy + ry * Math.sin(ea);
-      const x2 = cx + rx * Math.cos(ea);
-      const y2 = cy + depth + ry * Math.sin(ea);
-      ctx.lineTo(x2, y2);
-      ctx.ellipse(cx, cy + depth, rx, ry, 0, ea, sa, true);
-      const x3 = cx + rx * Math.cos(sa);
-      const y3 = cy + ry * Math.sin(sa);
-      ctx.lineTo(x3, y3);
-      ctx.closePath();
-      ctx.fillStyle = darken(cores[i], 55);
+      ctx.ellipse(cx, cy + depth + 10, rx * 0.85, ry * 0.55, 0, 0, Math.PI * 2);
+      const shadowGrad = ctx.createRadialGradient(cx, cy + depth + 10, 0, cx, cy + depth + 10, rx * 0.85);
+      shadowGrad.addColorStop(0, 'rgba(0,0,0,0.35)');
+      shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = shadowGrad;
       ctx.fill();
+      ctx.restore();
+      // Laterais — arco externo + paredes retas de cada fatia
+      segs.forEach(seg => {
+        const { sa, ea, mid, dark, ex, ey } = seg;
+        const ocx = cx + ex, ocy = cy + ey;
+        const dark2 = darken(seg.color, 45);
+
+        // Parede curva externa (arco)
+        if (Math.sin(mid) > -0.1) {
+          ctx.beginPath();
+          ctx.moveTo(ocx + rx * Math.cos(sa), ocy + ry * Math.sin(sa));
+          ctx.ellipse(ocx, ocy, rx, ry, 0, sa, ea);
+          ctx.lineTo(ocx + rx * Math.cos(ea), ocy + depth + ry * Math.sin(ea));
+          ctx.ellipse(ocx, ocy + depth, rx, ry, 0, ea, sa, true);
+          ctx.closePath();
+          ctx.fillStyle = dark;
+          ctx.fill();
+        }
+
+        // Parede reta — lado esquerdo da fatia
+        const x1s = ocx + rx * Math.cos(sa), y1s = ocy + ry * Math.sin(sa);
+        ctx.beginPath();
+        ctx.moveTo(ocx, ocy);
+        ctx.lineTo(x1s, y1s);
+        ctx.lineTo(x1s, y1s + depth);
+        ctx.lineTo(ocx, ocy + depth);
+        ctx.closePath();
+        ctx.fillStyle = dark2;
+        ctx.fill();
+
+        // Parede reta — lado direito da fatia
+        const x2s = ocx + rx * Math.cos(ea), y2s = ocy + ry * Math.sin(ea);
+        ctx.beginPath();
+        ctx.moveTo(ocx, ocy);
+        ctx.lineTo(x2s, y2s);
+        ctx.lineTo(x2s, y2s + depth);
+        ctx.lineTo(ocx, ocy + depth);
+        ctx.closePath();
+        ctx.fillStyle = dark2;
+        ctx.fill();
+      });
+      segs.forEach(seg => {
+        const { sa, ea, color, ex, ey } = seg;
+        const ocx = cx + ex, ocy = cy + ey;
+        ctx.beginPath();
+        ctx.moveTo(ocx, ocy);
+        ctx.ellipse(ocx, ocy, rx, ry, 0, sa, ea);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+        if (segs.length > 1) {
+          ctx.strokeStyle = GAP_BG;
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+        }
+      });
+      segs.forEach(seg => {
+        const { mid, ex, ey, pct } = seg;
+        if (pct < 5) return;
+        const ocx = cx + ex, ocy = cy + ey;
+        const lx = ocx + rx * 0.58 * Math.cos(mid);
+        const ly = ocy + ry * 0.58 * Math.sin(mid);
+        ctx.font = 'bold 12px Inter,sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,0.7)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(pct + '%', lx, ly);
+        ctx.shadowBlur = 0;
+      });
+      const legendX = cx + rx + EXPLODE + 18;
+      const itemH   = 22;
+      let legendY   = cy - (segs.length * itemH) / 2 + 4;
+      segs.forEach(seg => {
+        ctx.beginPath();
+        ctx.roundRect(legendX, legendY - 5, 10, 10, 3);
+        ctx.fillStyle = seg.color;
+        ctx.fill();
+        ctx.font = '11px Inter,sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.82)';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(seg.label, legendX + 14, legendY);
+        legendY += itemH;
+      });
     }
-    a += angle;
-  });
-
-  // Face superior de cada fatia
-  a = startAngle;
-  angles.forEach((angle, i) => {
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.ellipse(cx, cy, rx, ry, 0, a, a + angle);
-    ctx.closePath();
-
-    // Gradiente para dar profundidade
-    const mid = a + angle/2;
-    const gx = cx + rx * 0.5 * Math.cos(mid);
-    const gy = cy + ry * 0.5 * Math.sin(mid);
-    const grad = ctx.createRadialGradient(gx, gy, 0, cx, cy, rx);
-    grad.addColorStop(0, cores[i]);
-    grad.addColorStop(1, darken(cores[i], 30));
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // Borda entre fatias
-    ctx.strokeStyle = 'rgba(10,22,40,0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    a += angle;
-  });
-
-  // Porcentagens DENTRO das fatias
-  a = startAngle;
-  angles.forEach((angle, i) => {
-    const pct = Math.round((dados[i]/total)*100);
-    if (pct < 4) { a += angle; return; }
-    const mid = a + angle/2;
-    const dist = rx * 0.58;
-    const px = cx + dist * Math.cos(mid);
-    const py = cy + ry * 0.58 * Math.sin(mid);
-
-    ctx.font = 'bold 13px Inter,sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    
-    // Sombra no texto
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.shadowBlur = 4;
-    ctx.fillText(pct + '%', px, py);
-    ctx.shadowBlur = 0;
-    a += angle;
-  });
-
-  // Legenda com linhas apontando
-  const legendX = cx + rx + 20;
-  let legendY = cy - (titulos.length * 22) / 2;
-  titulos.forEach((titulo, i) => {
-    const pct = Math.round((dados[i]/total)*100);
-    
-    // Bolinha colorida
-    ctx.beginPath();
-    ctx.arc(legendX + 6, legendY, 6, 0, Math.PI*2);
-    ctx.fillStyle = cores[i];
-    ctx.fill();
-
-    // Texto
-    ctx.font = '11px Inter,sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(titulo, legendX + 16, legendY);
-    legendY += 24;
-  });
-}
 
   // Garante que canvases têm dimensão antes de desenhar
   const canvases = ['chartReceitas', 'chartDespesas', 'chartProducao'];
@@ -4013,159 +4199,153 @@ window.addEventListener('load', () => {
 // ====== GRÁFICOS ======
 function desenharPizza3D(canvasId, dados, cores, titulos) {
   const canvas = document.getElementById(canvasId);
-  console.log('Canvas:', canvasId, canvas, canvas?.offsetWidth, canvas?.offsetHeight);
-  if (!canvas) {
-    console.warn('Canvas não encontrado:', canvasId);
-    return;
-  }
-  
-  // Garante tamanho mínimo
+  if (!canvas) { console.warn('Canvas não encontrado:', canvasId); return; }
   if (canvas.offsetWidth === 0) {
     canvas.style.width = '100%';
     canvas.style.minHeight = '220px';
     canvas.style.display = 'block';
   }
-
   const ctx = canvas.getContext('2d');
   const rect = canvas.getBoundingClientRect();
-  const W = canvas.width = Math.max(rect.width,
-    canvas.parentElement?.offsetWidth || 280, 280);
-  const H = canvas.height = Math.max(rect.height,
-    canvas.parentElement?.offsetHeight || 220, 220);
+  const dpr = window.devicePixelRatio || 1;
+  const W = Math.max(rect.width, canvas.parentElement?.offsetWidth || 280, 280);
+  const H = Math.max(rect.height, canvas.parentElement?.offsetHeight || 220, 220);
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
-
-  const total = dados.reduce((a,b) => a+b, 0);
+  const total = dados.reduce((a, b) => a + b, 0);
   if (total <= 0) {
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
     ctx.font = '13px Inter,sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Sem dados', W/2, H/2);
+    ctx.fillText('Sem dados', W / 2, H / 2);
     return;
   }
-
-  // Posição e tamanho — mais vertical
-  const cx = W * 0.42;
-  const cy = H * 0.56;
-  const rx = W * 0.28;
-  const ry = rx * 0.5; // menos achatado = mais em pé
-  const depth = 60;     // profundidade da lateral
-
-  const angles = dados.map(v => (v/total) * Math.PI * 2);
-  let startAngle = -Math.PI / 2;
-
-  // Função cor mais escura para lateral
+  const legendW = 110;
+  const cx   = (W - legendW) * 0.50;
+  const cy   = H * 0.46;
+  const rx   = Math.min((W - legendW) * 0.36, 100);
+  const ry   = rx * 0.42;
+  const depth = Math.round(rx * 0.32);
+  const EXPLODE = dados.length > 1 ? rx * 0.10 : 0;
+  const GAP_BG  = '#0a1628';
   function darken(hex, amt) {
     let r = parseInt(hex.slice(1,3),16);
     let g = parseInt(hex.slice(3,5),16);
     let b = parseInt(hex.slice(5,7),16);
-    r = Math.max(0, r - amt);
-    g = Math.max(0, g - amt);
-    b = Math.max(0, b - amt);
-    return `rgb(${r},${g},${b})`;
+    return `rgb(${Math.max(0,r-amt)},${Math.max(0,g-amt)},${Math.max(0,b-amt)})`;
   }
-
-  // Sombra embaixo
+  const segs = [];
+  let startA = -Math.PI / 2;
+  dados.forEach((v, i) => {
+    const sweep = (v / total) * Math.PI * 2;
+    const mid   = startA + sweep / 2;
+    segs.push({
+      sa: startA, ea: startA + sweep, mid,
+      color: cores[i], dark: darken(cores[i], 60),
+      ex: Math.cos(mid) * EXPLODE,
+      ey: Math.sin(mid) * EXPLODE,
+      pct: Math.round((v / total) * 100),
+      label: titulos[i]
+    });
+    startA += sweep;
+  });
   ctx.save();
   ctx.beginPath();
-  ctx.ellipse(cx, cy + depth + 8, rx*0.9, ry*0.6, 0, 0, Math.PI*2);
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.filter = 'blur(8px)';
+  ctx.ellipse(cx, cy + depth + 10, rx * 0.85, ry * 0.55, 0, 0, Math.PI * 2);
+  const shadowGrad = ctx.createRadialGradient(cx, cy + depth + 10, 0, cx, cy + depth + 10, rx * 0.85);
+  shadowGrad.addColorStop(0, 'rgba(0,0,0,0.35)');
+  shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = shadowGrad;
   ctx.fill();
   ctx.restore();
+  // Laterais — arco externo + paredes retas de cada fatia
+  segs.forEach(seg => {
+    const { sa, ea, mid, dark, ex, ey } = seg;
+    const ocx = cx + ex, ocy = cy + ey;
+    const dark2 = darken(seg.color, 45);
 
-  // Laterais — só as de baixo (sin > 0)
-  let a = startAngle;
-  angles.forEach((angle, i) => {
-    const sa = a;
-    const ea = a + angle;
-    const mid = sa + angle/2;
+    // Parede curva externa (arco)
     if (Math.sin(mid) > -0.1) {
       ctx.beginPath();
-      ctx.ellipse(cx, cy + depth, rx, ry, 0, sa, ea);
-      const x1 = cx + rx * Math.cos(ea);
-      const y1 = cy + ry * Math.sin(ea);
-      const x2 = cx + rx * Math.cos(ea);
-      const y2 = cy + depth + ry * Math.sin(ea);
-      ctx.lineTo(x2, y2);
-      ctx.ellipse(cx, cy + depth, rx, ry, 0, ea, sa, true);
-      const x3 = cx + rx * Math.cos(sa);
-      const y3 = cy + ry * Math.sin(sa);
-      ctx.lineTo(x3, y3);
+      ctx.moveTo(ocx + rx * Math.cos(sa), ocy + ry * Math.sin(sa));
+      ctx.ellipse(ocx, ocy, rx, ry, 0, sa, ea);
+      ctx.lineTo(ocx + rx * Math.cos(ea), ocy + depth + ry * Math.sin(ea));
+      ctx.ellipse(ocx, ocy + depth, rx, ry, 0, ea, sa, true);
       ctx.closePath();
-      ctx.fillStyle = darken(cores[i], 55);
+      ctx.fillStyle = dark;
       ctx.fill();
     }
-    a += angle;
-  });
 
-  // Face superior de cada fatia
-  a = startAngle;
-  angles.forEach((angle, i) => {
+    // Parede reta — lado esquerdo da fatia
+    const x1s = ocx + rx * Math.cos(sa), y1s = ocy + ry * Math.sin(sa);
     ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.ellipse(cx, cy, rx, ry, 0, a, a + angle);
+    ctx.moveTo(ocx, ocy);
+    ctx.lineTo(x1s, y1s);
+    ctx.lineTo(x1s, y1s + depth);
+    ctx.lineTo(ocx, ocy + depth);
     ctx.closePath();
-
-    // Gradiente para dar profundidade
-    const mid = a + angle/2;
-    const gx = cx + rx * 0.5 * Math.cos(mid);
-    const gy = cy + ry * 0.5 * Math.sin(mid);
-    const grad = ctx.createRadialGradient(gx, gy, 0, cx, cy, rx);
-    grad.addColorStop(0, cores[i]);
-    grad.addColorStop(1, darken(cores[i], 30));
-    ctx.fillStyle = grad;
+    ctx.fillStyle = dark2;
     ctx.fill();
 
-    // Borda entre fatias
-    ctx.strokeStyle = 'rgba(10,22,40,0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    a += angle;
+    // Parede reta — lado direito da fatia
+    const x2s = ocx + rx * Math.cos(ea), y2s = ocy + ry * Math.sin(ea);
+    ctx.beginPath();
+    ctx.moveTo(ocx, ocy);
+    ctx.lineTo(x2s, y2s);
+    ctx.lineTo(x2s, y2s + depth);
+    ctx.lineTo(ocx, ocy + depth);
+    ctx.closePath();
+    ctx.fillStyle = dark2;
+    ctx.fill();
   });
-
-  // Porcentagens DENTRO das fatias
-  a = startAngle;
-  angles.forEach((angle, i) => {
-    const pct = Math.round((dados[i]/total)*100);
-    if (pct < 4) { a += angle; return; }
-    const mid = a + angle/2;
-    const dist = rx * 0.58;
-    const px = cx + dist * Math.cos(mid);
-    const py = cy + ry * 0.58 * Math.sin(mid);
-
-    ctx.font = 'bold 13px Inter,sans-serif';
+  segs.forEach(seg => {
+    const { sa, ea, color, ex, ey } = seg;
+    const ocx = cx + ex, ocy = cy + ey;
+    ctx.beginPath();
+    ctx.moveTo(ocx, ocy);
+    ctx.ellipse(ocx, ocy, rx, ry, 0, sa, ea);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    if (segs.length > 1) {
+      ctx.strokeStyle = GAP_BG;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+  });
+  segs.forEach(seg => {
+    const { mid, ex, ey, pct } = seg;
+    if (pct < 5) return;
+    const ocx = cx + ex, ocy = cy + ey;
+    const lx = ocx + rx * 0.58 * Math.cos(mid);
+    const ly = ocy + ry * 0.58 * Math.sin(mid);
+    ctx.font = 'bold 12px Inter,sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    
-    // Sombra no texto
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
     ctx.shadowBlur = 4;
-    ctx.fillText(pct + '%', px, py);
+    ctx.fillText(pct + '%', lx, ly);
     ctx.shadowBlur = 0;
-    a += angle;
   });
-
-  // Legenda com linhas apontando
-  const legendX = cx + rx + 20;
-  let legendY = cy - (titulos.length * 22) / 2;
-  titulos.forEach((titulo, i) => {
-    const pct = Math.round((dados[i]/total)*100);
-    
-    // Bolinha colorida
+  const legendX = cx + rx + EXPLODE + 18;
+  const itemH   = 22;
+  let legendY   = cy - (segs.length * itemH) / 2 + 4;
+  segs.forEach(seg => {
     ctx.beginPath();
-    ctx.arc(legendX + 6, legendY, 6, 0, Math.PI*2);
-    ctx.fillStyle = cores[i];
+    ctx.roundRect(legendX, legendY - 5, 10, 10, 3);
+    ctx.fillStyle = seg.color;
     ctx.fill();
-
-    // Texto
     ctx.font = '11px Inter,sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillStyle = 'rgba(255,255,255,0.82)';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(titulo, legendX + 16, legendY);
-    legendY += 24;
+    ctx.fillText(seg.label, legendX + 14, legendY);
+    legendY += itemH;
   });
 }
 
