@@ -963,7 +963,8 @@
           <h2 class="font-heading text-2xl font-bold">Produção</h2>
           <p class="text-sm" style="color:rgba(255,255,255,0.4)">Registro de produção por funcionário</p>
          </div><div style="display:flex;gap:8px;align-items:center;"><button class="btn-primary flex items-center gap-2" onclick="openModal('addProducaoModal')"> <i data-lucide="plus" style="width:18px;height:18px"></i>Registrar </button>
-         <button onclick="exportarDossieProducao()" style="background:rgba(0,230,200,0.1);border:1px solid rgba(0,230,200,0.3);border-radius:10px;padding:10px 18px;color:#00e6c8;font-size:13px;font-weight:600;cursor:pointer;">↓ Dossiê PDF</button></div>
+         <button onclick="exportarDossieProducao()" style="background:rgba(0,230,200,0.1);border:1px solid rgba(0,230,200,0.3);border-radius:10px;padding:10px 18px;color:#00e6c8;font-size:13px;font-weight:600;cursor:pointer;">↓ Dossiê PDF</button>
+         <button onclick="limparProducaoView()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 18px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Limpar Produção</button></div>
         </div>
         <div style="margin-bottom:20px;">
           <div style="position:relative;">
@@ -3145,6 +3146,16 @@
       });
       const producaoValorInput = document.getElementById('producValor');
       if (producaoValorInput) producaoValorInput.value = '0.00';
+    }
+
+    function limparProducaoView() {
+      const container = document.getElementById('producaoList');
+      const empty = document.getElementById('producaoEmpty');
+      const busca = document.getElementById('buscaProducao');
+      if (container) container.innerHTML = '';
+      if (empty) empty.style.display = 'block';
+      if (busca) busca.value = '';
+      showToast('Exibição de produção limpa. Os dados permanecem no banco.', '#00e6c8');
     }
    async function salvarDespesaFixa(e) {
       e.preventDefault();
