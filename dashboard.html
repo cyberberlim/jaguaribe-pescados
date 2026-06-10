@@ -967,21 +967,28 @@
          <button onclick="limparProducaoView()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 18px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Limpar Produção</button></div>
         </div>
         <div style="margin-bottom:20px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+
+            <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.5);">Período:</span>
+
+            <button onclick="selecionarQuinzena('q1')" id="btnQ1" style="padding:8px 16px;border-radius:20px;border:1px solid rgba(0,230,200,0.3);background:rgba(0,230,200,0.1);color:#00e6c8;font-size:12px;font-weight:600;cursor:pointer;">1ª Quinzena (1-15)</button>
+
+            <button onclick="selecionarQuinzena('q2')" id="btnQ2" style="padding:8px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;cursor:pointer;">2ª Quinzena (16-31)</button>
+
+            <button onclick="selecionarQuinzena('todos')" id="btnTodos" style="padding:8px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;cursor:pointer;">Mês completo</button>
+
+            <div style="margin-left:auto;display:flex;gap:8px;">
+              <select id="filtroMes" onchange="renderProducao()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:8px 12px;color:#fff;font-size:12px;outline:none;"></select>
+
+              <select id="filtroAno" onchange="renderProducao()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:8px 12px;color:#fff;font-size:12px;outline:none;"></select>
+            </div>
+          </div>
+
+          <div id="labelQuinzena" style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:8px;"></div>
+
           <div style="position:relative;">
-            <input type="text" id="buscaProducao"
-              placeholder="Buscar funcionário na produção..."
-              oninput="filtrarProducao()"
-              style="width:100%;background:rgba(255,255,255,0.05);
-                border:1px solid rgba(255,255,255,0.1);
-                border-radius:12px;padding:12px 12px 12px 40px;
-                color:#fff;font-size:14px;outline:none;">
-            <svg style="position:absolute;left:12px;top:50%;
-              transform:translateY(-50%);opacity:0.4;"
-              width="18" height="18" viewBox="0 0 24 24"
-              fill="none" stroke="white" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-            </svg>
+            <input type="text" id="buscaProducao" placeholder="Buscar funcionário na produção..." oninput="filtrarProducao()" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 12px 12px 40px;color:#fff;font-size:14px;outline:none;">
+            <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:0.4;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           </div>
         </div>
         <div id="producaoList" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
@@ -1696,18 +1703,37 @@
       if (modal) {
         modal.classList.remove('hidden');
         if (typeof lucide !== 'undefined') lucide.createIcons();
-        // Preencher modal de produção com configuração global, se houver
-        if (id === 'addProducaoModal' && window.globalProducao) {
-          const g = window.globalProducao;
-          const campoData = document.getElementById('producData') || document.querySelector('[id*="producao"][id*="ata"]');
-          if (campoData) campoData.value = g.data;
-          const campoTurno = document.getElementById('producPeriodo') || document.getElementById('producaoTurno') || document.querySelector('[id*="periodo"],[id*="turno"]');
-          if (campoTurno) campoTurno.value = g.turno;
-          const campoServico = document.getElementById('producServico') || document.querySelector('[id*="servico"]');
-          if (campoServico) {
-            campoServico.value = g.servico;
-            campoServico.dispatchEvent(new Event('change'));
-          }
+        // Preencher modal de produção com configuração global, se houver (robusto)
+        if (id === 'addProducaoModal') {
+          setTimeout(() => {
+            if (window.globalProducao) {
+              const g = window.globalProducao;
+
+              // Preenche data
+              const campoData = document.getElementById('producaoData')
+                || document.querySelector('#addProducaoModal [type="date"]')
+                || document.querySelector('[id*="producao"][id*="ata"]');
+              if (campoData) campoData.value = g.data;
+
+              // Preenche turno/periodo
+              const campoTurno = document.getElementById('producaoPeriodo')
+                || document.getElementById('producaoTurno')
+                || document.querySelector('#addProducaoModal select[id*="periodo"]')
+                || document.querySelector('#addProducaoModal select[id*="turno"]');
+              if (campoTurno) {
+                campoTurno.value = g.turno;
+                campoTurno.dispatchEvent(new Event('change'));
+              }
+
+              // Preenche serviço
+              const campoServico = document.getElementById('producaoServico')
+                || document.querySelector('#addProducaoModal select[id*="servico"]');
+              if (campoServico) {
+                campoServico.value = g.servico;
+                campoServico.dispatchEvent(new Event('change'));
+              }
+            }
+          }, 100);
         }
       }
     }
@@ -1956,11 +1982,92 @@
       return d.toLocaleDateString('pt-BR');
     }
 
+    // Variável global para quinzena selecionada
+    window.quinzenaSelecionada = 'q1';
+
+    function inicializarFiltroQuinzena() {
+      const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+      const selectMes = document.getElementById('filtroMes');
+      const selectAno = document.getElementById('filtroAno');
+      if (!selectMes || !selectAno) return;
+
+      const hoje = new Date();
+
+      selectMes.innerHTML = meses.map((m,i) =>
+        `<option value="${i+1}" ${i+1===hoje.getMonth()+1?'selected':''}>${m}</option>`
+      ).join('');
+
+      const anoAtual = hoje.getFullYear();
+      selectAno.innerHTML = [anoAtual-1, anoAtual, anoAtual+1].map(a =>
+        `<option value="${a}" ${a===anoAtual?'selected':''}>${a}</option>`
+      ).join('');
+    }
+
+    function selecionarQuinzena(q) {
+      window.quinzenaSelecionada = q;
+
+      const btns = {
+        q1: document.getElementById('btnQ1'),
+        q2: document.getElementById('btnQ2'),
+        todos: document.getElementById('btnTodos')
+      };
+
+      Object.keys(btns).forEach(key => {
+        if (!btns[key]) return;
+        if (key === q) {
+          btns[key].style.background = 'rgba(0,230,200,0.2)';
+          btns[key].style.borderColor = 'rgba(0,230,200,0.6)';
+          btns[key].style.color = '#00e6c8';
+        } else {
+          btns[key].style.background = 'transparent';
+          btns[key].style.borderColor = 'rgba(255,255,255,0.1)';
+          btns[key].style.color = 'rgba(255,255,255,0.5)';
+        }
+      });
+
+      const label = document.getElementById('labelQuinzena');
+      const mes = document.getElementById('filtroMes')?.value;
+      const ano = document.getElementById('filtroAno')?.value;
+      const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+      if (label) {
+        if (q === 'q1') label.textContent = 'Mostrando dias 1-15 de '+ meses[mes-1] +'/'+ano;
+        else if (q === 'q2') label.textContent = 'Mostrando dias 16-31 de '+ meses[mes-1] +'/'+ano;
+        else label.textContent = 'Mostrando mês completo: '+ meses[mes-1] +'/'+ano;
+      }
+
+      renderProducao();
+    }
+
+    function filtrarPorQuinzena(producoes) {
+      const q = window.quinzenaSelecionada || 'q1';
+      const mes = parseInt(document.getElementById('filtroMes')?.value || new Date().getMonth()+1);
+      const ano = parseInt(document.getElementById('filtroAno')?.value || new Date().getFullYear());
+
+      return (producoes || []).filter(p => {
+        if (!p.data_producao) return false;
+        const d = new Date(p.data_producao);
+        const pMes = d.getMonth() + 1;
+        const pAno = d.getFullYear();
+        const pDia = d.getDate();
+
+        if (pMes !== mes || pAno !== ano) return false;
+
+        if (q === 'q1') return pDia >= 1 && pDia <= 15;
+        if (q === 'q2') return pDia >= 16 && pDia <= 31;
+        return true;
+      });
+    }
+
     function renderProducao() {
       const container = document.getElementById('producaoList');
       const empty = document.getElementById('producaoEmpty');
 
-      if (!currentData.producao || currentData.producao.length === 0) {
+      const todasProducoes = currentData.producao || [];
+      const producoesFiltradas = filtrarPorQuinzena(todasProducoes);
+
+      if (!producoesFiltradas || producoesFiltradas.length === 0) {
         if (container) container.innerHTML = '';
         if (empty) empty.style.display = 'block';
         return;
@@ -1976,7 +2083,7 @@
 
       // Agrupa por funcionário
       const porFunc = {};
-      currentData.producao.forEach(p => {
+      producoesFiltradas.forEach(p => {
         const fid = p.funcionario_id || 'sem_func';
         if (!porFunc[fid]) porFunc[fid] = {};
         const dataFormatada = formatarData(p.data_producao);
@@ -2002,7 +2109,7 @@
         const pixFunc = func ? (func.pix || 'Não cadastrado') : '—';
 
         const diasObj = porFunc[fid];
-        const todasProds = currentData.producao.filter(p => p.funcionario_id === fid);
+        const todasProds = producoesFiltradas.filter(p => p.funcionario_id === fid);
         const totalGeral = todasProds.reduce((s, p) => s + parseFloat(p.valor || 0), 0);
         const temPendente = todasProds.some(p => !p.codigo_pagamento);
         const statusLabel = temPendente ? 'Pendente' : 'Pago';
@@ -2279,13 +2386,22 @@
       doc.text('Jaguaribe Pescados', 14, 13);
       doc.setFontSize(11);
       doc.setTextColor(200, 200, 200);
-      doc.text('Dossiê de Produção — Completo', 14, 22);
+      const q = window.quinzenaSelecionada || 'q1';
+      const mes = document.getElementById('filtroMes')?.value;
+      const ano = document.getElementById('filtroAno')?.value;
+      const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const periodo = q === 'q1' ? '1ª Quinzena (1-15)' : q === 'q2' ? '2ª Quinzena (16-31)' : 'Mês Completo';
+      const tituloperiodo = periodo + ' — ' + meses[(mes||1)-1] + '/' + ano;
+      doc.text('Dossiê de Produção — ' + tituloperiodo, 14, 22);
       doc.setFontSize(9);
       doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), pageW - 14, 22, {align:'right'});
       y = 38;
 
+      const todasProducoes = currentData.producao || [];
+      const producoesFiltradas = filtrarPorQuinzena(todasProducoes);
+
       const porFunc = {};
-      (currentData.producao || []).forEach(p => {
+      (producoesFiltradas || []).forEach(p => {
         const fid = p.funcionario_id || 'sem';
         if (!porFunc[fid]) porFunc[fid] = [];
         porFunc[fid].push(p);
@@ -2374,7 +2490,8 @@
       });
 
       const dataHoje = new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
-      doc.save('dossie-producao-' + dataHoje + '.pdf');
+      const arquivoPeriodo = (mes || '') + '-' + (ano || '') + '-' + (q || 'q1');
+      doc.save('dossie-producao-' + arquivoPeriodo + '-' + dataHoje + '.pdf');
       showToast('Dossiê gerado com sucesso!', '#00e6c8');
     }
 
@@ -3085,19 +3202,38 @@
     }
 
     function aplicarConfiguracaoGlobal() {
-      const data = document.getElementById('globalData').value;
-      const turno = document.getElementById('globalTurno').value;
+      const data = document.getElementById('globalData')?.value;
+      const turnoEl = document.getElementById('globalTurno');
       const servicoEl = document.getElementById('globalServico');
-      const servico = servicoEl.value;
-      if (!data || !servico) {
-        showToast('Selecione data e serviço!', '#ffc837');
+      const turno = turnoEl?.value;
+      const servico = servicoEl?.value;
+
+      if (!data) {
+        showToast('Selecione a data!', '#ffc837');
         return;
       }
+      if (!turno) {
+        showToast('Selecione o turno!', '#ffc837');
+        return;
+      }
+      if (!servico) {
+        showToast('Selecione o serviço!', '#ffc837');
+        return;
+      }
+
       window.globalProducao = { data, turno, servico };
-      const nomeServico = servicoEl.options[servicoEl.selectedIndex].text;
+
+      const nomeServico = servicoEl.options[servicoEl.selectedIndex]?.text || servico;
+      const nomeTurno = turnoEl.options[turnoEl.selectedIndex]?.text || turno;
       const dataFormatada = new Date(data + 'T12:00:00').toLocaleDateString('pt-BR');
-      document.getElementById('globalStatus').innerHTML = '<span style="color:#00e6c8;font-weight:600;">✓ Configurado: ' + dataFormatada + ' | ' + turno + ' | ' + nomeServico + '</span>';
-      showToast('Configuração aplicada! Agora é só informar o peso de cada funcionário.', '#00e6c8');
+
+      const status = document.getElementById('globalStatus');
+      if (status) {
+        status.innerHTML = '<span style="color:#00e6c8;font-weight:600;">Configurado: '
+          + dataFormatada + ' | ' + nomeTurno + ' | ' + nomeServico + '</span>';
+      }
+
+      showToast('Configurado! Agora registre o peso de cada funcionário.', '#00e6c8');
     }
 
 
@@ -4255,6 +4391,9 @@ window.addEventListener('load', () => {
     loadAll().then(() => {
       renderAll();
       navigateTo('producao');
+      setTimeout(() => {
+        try { inicializarFiltroQuinzena(); selecionarQuinzena(window.quinzenaSelecionada || 'q1'); } catch(e) {}
+      }, 100);
       if (typeof lucide !== 'undefined') lucide.createIcons();
       setTimeout(() => {
         try { initCharts(); } catch(e) {}
@@ -4264,6 +4403,9 @@ window.addEventListener('load', () => {
     loadAll().then(() => {
       renderAll();
       navigateTo('dashboard');
+      setTimeout(() => {
+        try { inicializarFiltroQuinzena(); } catch(e) {}
+      }, 100);
       if (typeof lucide !== 'undefined') lucide.createIcons();
       setTimeout(() => {
         try { initCharts(); } catch(e) {}
@@ -4516,6 +4658,11 @@ function navigateTo(pageId) {
   const target = document.getElementById('page-' + pageId);
   if (target) {
     target.style.display = 'block';
+    if (pageId === 'producao') {
+      setTimeout(() => {
+        try { inicializarFiltroQuinzena(); selecionarQuinzena(window.quinzenaSelecionada || 'q1'); } catch(e) {}
+      }, 100);
+    }
     if (pageId === 'dashboard') {
       window.dispatchEvent(new Event('resize'));
       setTimeout(() => {
