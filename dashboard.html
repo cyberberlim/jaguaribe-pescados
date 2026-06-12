@@ -1709,28 +1709,20 @@
             if (window.globalProducao) {
               const g = window.globalProducao;
 
-              // Preenche data
-              const campoData = document.getElementById('producaoData')
-                || document.querySelector('#addProducaoModal [type="date"]')
-                || document.querySelector('[id*="producao"][id*="ata"]');
-              if (campoData) campoData.value = g.data;
+              // Preenche data // turno // serviço
+              const campoData = document.getElementById('producData');
+if (campoData) campoData.value = g.data;
 
-              // Preenche turno/periodo
-              const campoTurno = document.getElementById('producaoPeriodo')
-                || document.getElementById('producaoTurno')
-                || document.querySelector('#addProducaoModal select[id*="periodo"]')
-                || document.querySelector('#addProducaoModal select[id*="turno"]');
-              if (campoTurno) {
-                campoTurno.value = g.turno;
-                campoTurno.dispatchEvent(new Event('change'));
-              }
+const campoTurno = document.getElementById('producPeriodo');
+if (campoTurno) {
+  campoTurno.value = g.turno;
+  campoTurno.dispatchEvent(new Event('change'));
+}
 
-              // Preenche serviço
-              const campoServico = document.getElementById('producaoServico')
-                || document.querySelector('#addProducaoModal select[id*="servico"]');
-              if (campoServico) {
-                campoServico.value = g.servico;
-                campoServico.dispatchEvent(new Event('change'));
+const campoServico = document.getElementById('producServico');
+if (campoServico) {
+  campoServico.value = g.servico;
+  campoServico.dispatchEvent(new Event('change'));
               }
             }
           }, 100);
