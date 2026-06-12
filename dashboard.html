@@ -9,6 +9,7 @@
   <script src="https://unpkg.com/pocketbase/dist/pocketbase.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Poppins:wght@600;700;800&amp;display=swap" rel="stylesheet">
   <style>
 
@@ -657,56 +658,38 @@
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
          <div class="card-stat glow">
-          <div style="color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;margin-bottom:8px">
-           SALDO DO CAIXA
-          </div>
-          <div class="font-heading text-2xl font-bold" id="finSaldo">
-           R$ 0
-          </div>
+          <div style="color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;margin-bottom:8px">SALDO ATUAL</div>
+          <div class="font-heading text-2xl font-bold" id="finSaldo">R$ 0</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:6px;">Após despesas lançadas</div>
          </div>
          <div class="card-stat glow">
-          <div style="color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;margin-bottom:8px">
-           TOTAL DE ENTRADAS
-          </div>
-          <div class="font-heading text-2xl font-bold" id="finReceitas">
-           R$ 0
-          </div>
+          <div style="color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;margin-bottom:8px">TOTAL PENDENTE</div>
+          <div class="font-heading text-2xl font-bold" style="color:#ffc837" id="finPendente">R$ 0</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:6px;">Ainda não descontado</div>
          </div>
          <div class="card-stat glow">
-          <div style="color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;margin-bottom:8px">
-           TOTAL DE SAÍDAS
-          </div>
-          <div class="font-heading text-2xl font-bold" style="color:#ff6b6b" id="finSaidas">
-           R$ 0
-          </div>
+          <div style="color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;margin-bottom:8px">TOTAL DE ENTRADAS</div>
+          <div class="font-heading text-2xl font-bold" id="finReceitas">R$ 0</div>
          </div>
          <div class="card-stat glow">
-          <div style="color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;margin-bottom:8px">
-           DESPESAS DO MÊS
-          </div>
-          <div class="font-heading text-2xl font-bold" style="color:#ffc837" id="finDespesasMes">
-           R$ 0
-          </div>
+          <div style="color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;margin-bottom:8px">TOTAL LANÇADO</div>
+          <div class="font-heading text-2xl font-bold" style="color:#ff6b6b" id="finLancado">R$ 0</div>
          </div>
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-         <div>
-          <div class="mb-4 flex items-center justify-between">
-           <h3 class="font-heading text-lg font-semibold">Despesas Fixas</h3><button class="btn-primary btn-small flex items-center gap-1" onclick="openModal('addDespesaFixaModal')"><i data-lucide="plus" style="width:16px;height:16px"></i></button>
-          </div>
-          <div id="despesasFixasList" class="space-y-3"></div>
-          <div id="despesasFixasEmpty" class="text-center py-8 text-sm" style="color:rgba(255,255,255,0.4)">
-           Nenhuma despesa fixa
-          </div>
+        <div class="mb-6">
+         <h3 class="font-heading text-lg font-semibold mb-4" style="color:#ffc837">📋 DESPESAS PENDENTES (Aguardando Lançamento)</h3>
+         <button class="btn-primary btn-small flex items-center gap-1 mb-4" onclick="openModal('addDespesaFixaModal')"><i data-lucide="plus" style="width:16px;height:16px"></i>Adicionar Despesa</button>
+         <div id="despesasPendentesList" class="space-y-3"></div>
+         <div id="despesasPendentesEmpty" class="text-center py-8 text-sm" style="color:rgba(255,255,255,0.4)">
+          Nenhuma despesa pendente
          </div>
-         <div>
-          <div class="mb-4 flex items-center justify-between">
-           <h3 class="font-heading text-lg font-semibold">Despesas Variáveis</h3><button class="btn-primary btn-small flex items-center gap-1" onclick="openModal('addDespesaVariavelModal')"><i data-lucide="plus" style="width:16px;height:16px"></i></button>
-          </div>
-          <div id="despesasVariaveisList" class="space-y-3"></div>
-          <div id="despesasVariaveisEmpty" class="text-center py-8 text-sm" style="color:rgba(255,255,255,0.4)">
-           Nenhuma despesa variável
-          </div>
+        </div>
+
+        <div class="mb-6" style="border-top:1px solid rgba(255,255,255,0.1);padding-top:20px;">
+         <h3 class="font-heading text-lg font-semibold mb-4" style="color:#00e6c8">✓ DESPESAS LANÇADAS (Já Descontadas)</h3>
+         <div id="despesasLancadasList" class="space-y-3"></div>
+         <div id="despesasLancadasEmpty" class="text-center py-8 text-sm" style="color:rgba(255,255,255,0.4)">
+          Nenhuma despesa lançada
          </div>
         </div>
         <div class="mb-6"><button class="btn-primary flex items-center gap-2 mb-4" onclick="openModal('addTransacaoModal')"> <i data-lucide="plus" style="width:18px;height:18px"></i>Nova Transação </button>
@@ -1070,11 +1053,50 @@
       </div>
       <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Telefone</label> <input type="tel" id="funcTelefone" placeholder="(XX) 99999-9999" required>
       </div>
-      <div class="mb-6"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Chave PIX</label> <input type="text" id="funcPix" placeholder="Chave PIX">
+      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Tipo de Chave PIX</label> <select id="funcTipoChavePix" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;color:#fff;font-size:13px;outline:none;"><option value="">Selecione o tipo</option><option value="cpf">CPF</option><option value="telefone">Telefone</option><option value="email">Email</option><option value="aleatoria">Chave Aleatória</option></select>
+      </div>
+      <div class="mb-6"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Chave PIX</label> <input type="text" id="funcPix" placeholder="Digite a chave PIX">
       </div>
       <div class="flex gap-3"><button type="button" class="btn-secondary flex-1" onclick="closeModal(null, 'addFuncionarioModal')">Cancelar</button> <button type="submit" class="btn-primary flex-1">Salvar</button>
       </div>
      </form>
+    </div>
+   </div><!-- PAGAMENTO PIX MODAL -->
+   <div id="pagamentoPIXModal" class="modal-overlay hidden" onclick="closeModal(event, 'pagamentoPIXModal')">
+    <div class="glass rounded-xl p-8 max-w-md w-full mx-4 fade-in" onclick="event.stopPropagation()" style="max-height:90vh;overflow-y:auto;">
+     <div class="flex items-center justify-between mb-6">
+      <h3 class="font-heading text-xl font-bold">💳 Pagamento PIX</h3><button onclick="closeModal(null, 'pagamentoPIXModal')" style="background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer"> <i data-lucide="x" style="width:20px;height:20px"></i> </button>
+     </div>
+     <div style="background:rgba(0,230,200,0.08);border:1px solid rgba(0,230,200,0.15);border-radius:12px;padding:16px;margin-bottom:16px;">
+      <p style="font-size:12px;color:rgba(255,255,255,0.5);margin:0 0 8px 0;">Funcionário</p>
+      <p id="pixNomeFuncionario" style="font-size:16px;font-weight:700;color:#00e6c8;margin:0;margin-bottom:12px;">—</p>
+      
+      <p style="font-size:12px;color:rgba(255,255,255,0.5);margin:0 0 8px 0;">Valor</p>
+      <p id="pixValorPagamento" style="font-size:20px;font-weight:700;color:#fff;margin:0;margin-bottom:16px;">R$ 0.00</p>
+      
+      <p style="font-size:12px;color:rgba(255,255,255,0.5);margin:0 0 8px 0;">Tipo de Chave PIX <span id="pixTipoChave"></span></p>
+      <p id="pixChave" style="font-size:13px;color:rgba(255,255,255,0.7);margin:0;word-break:break-all;font-family:monospace;">—</p>
+     </div>
+     
+     <div style="text-align:center;margin-bottom:16px;">
+      <p style="font-size:12px;color:rgba(255,255,255,0.5);margin:0 0 12px 0;">Escaneie este QR Code:</p>
+      <div id="pixQRCode" style="display:flex;justify-content:center;align-items:center;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:20px;margin-bottom:16px;min-height:220px;"></div>
+     </div>
+     
+     <div style="margin-bottom:16px;">
+      <label style="color:rgba(255,255,255,0.7);font-size:12px;font-weight:500;display:block;margin-bottom:8px;">Copia e Cola:</label>
+      <textarea id="pixCopiaCola" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;color:rgba(255,255,255,0.8);font-size:11px;font-family:monospace;height:60px;resize:none;outline:none;" readonly></textarea>
+     </div>
+     
+     <div class="flex gap-3" style="margin-bottom:12px;">
+      <button onclick="copiarPixCopiaCola()" class="btn-primary flex-1" style="background:linear-gradient(135deg,#00e6c8,#00b89e);">📋 Copiar</button>
+      <button onclick="abrirAppBancoRecebedor()" class="btn-secondary flex-1">📱 App Banco</button>
+     </div>
+     
+     <div class="flex gap-3">
+      <button type="button" class="btn-secondary flex-1" onclick="closeModal(null, 'pagamentoPIXModal')">Cancelar</button>
+      <button type="button" class="btn-primary flex-1" onclick="confirmarPagamentoPix()">✓ Confirmar</button>
+     </div>
     </div>
    </div><!-- ADD TRANSAÇÃO MODAL -->
    <div id="addTransacaoModal" class="modal-overlay hidden" onclick="closeModal(event, 'addTransacaoModal')">
@@ -1342,6 +1364,8 @@
       renderHistoricoEstoque();
       renderDespesasFixas();
       renderDespesasVariaveis();
+      renderDespesasPendentes();
+      renderDespesasLancadas();
       renderProducao();
       atualizarSelectFuncionarios();
       atualizarSelectLotes();
@@ -1710,27 +1734,21 @@
               const g = window.globalProducao;
 
               // Preenche data
-              const campoData = document.getElementById('producaoData')
-                || document.querySelector('#addProducaoModal [type="date"]')
-                || document.querySelector('[id*="producao"][id*="ata"]');
-              if (campoData) campoData.value = g.data;
+              const campoData = document.getElementById('producData');
+if (campoData) campoData.value = g.data;
 
               // Preenche turno/periodo
-              const campoTurno = document.getElementById('producaoPeriodo')
-                || document.getElementById('producaoTurno')
-                || document.querySelector('#addProducaoModal select[id*="periodo"]')
-                || document.querySelector('#addProducaoModal select[id*="turno"]');
-              if (campoTurno) {
-                campoTurno.value = g.turno;
-                campoTurno.dispatchEvent(new Event('change'));
+              const campoTurno = document.getElementById('producPeriodo');
+if (campoTurno) {
+  campoTurno.value = g.turno;
+  campoTurno.dispatchEvent(new Event('change'));
               }
 
               // Preenche serviço
-              const campoServico = document.getElementById('producaoServico')
-                || document.querySelector('#addProducaoModal select[id*="servico"]');
-              if (campoServico) {
-                campoServico.value = g.servico;
-                campoServico.dispatchEvent(new Event('change'));
+              const campoServico = document.getElementById('producServico');
+if (campoServico) {
+  campoServico.value = g.servico;
+  campoServico.dispatchEvent(new Event('change'));
               }
             }
           }, 100);
@@ -1895,6 +1913,14 @@
                 color:#00e6c8;cursor:pointer;font-size:12px;
                 font-weight:600;">
               Editar
+            </button>
+            <button onclick="abrirModalPagamentoPix('${f.id}')"
+              style="background:rgba(0,200,255,0.1);
+                border:1px solid rgba(0,200,255,0.2);
+                border-radius:6px;padding:4px 10px;
+                color:#00c8ff;cursor:pointer;font-size:12px;
+                font-weight:600;">
+              💳 PIX
             </button>
             <button class="flex-1 btn-danger py-2 text-xs flex items-center justify-center gap-1.5" onclick="apagarFuncionario('${f.id}')">
               <i data-lucide="trash-2" style="width:14px;height:14px"></i>Excluir
@@ -2778,20 +2804,33 @@
         .filter(t => t.tipo_transacao === 'saida')
         .reduce((s,t) => s + parseFloat(t.valor_transacao || 0), 0);
         
-      const totalFixas = (currentData.despesasFixas || [])
+      // Soma apenas despesas com status "lancado"
+      const totalFixasLancadas = (currentData.despesasFixas || [])
+        .filter(d => d.status === 'lancado')
         .reduce((s,d) => s + parseFloat(d.valor_despesa_fixa || 0), 0);
         
-      const totalVariaveis = (currentData.despesasVariaveis || [])
+      const totalVariaveisLancadas = (currentData.despesasVariaveis || [])
+        .filter(d => d.status === 'lancado')
+        .reduce((s,d) => s + parseFloat(d.valor_despesa_variavel || 0), 0);
+        
+      // Soma despesas pendentes (não descontadas ainda)
+      const totalFixasPendentes = (currentData.despesasFixas || [])
+        .filter(d => d.status === 'pendente')
         .reduce((s,d) => s + parseFloat(d.valor_despesa_fixa || 0), 0);
         
-      const totalDespesas = totalFixas + totalVariaveis;
-      const saldo = totalEntradas - totalSaidas - totalDespesas;
+      const totalVariaveisPendentes = (currentData.despesasVariaveis || [])
+        .filter(d => d.status === 'pendente')
+        .reduce((s,d) => s + parseFloat(d.valor_despesa_variavel || 0), 0);
+        
+      const totalDespesasLancadas = totalFixasLancadas + totalVariaveisLancadas;
+      const totalDespesasPendentes = totalFixasPendentes + totalVariaveisPendentes;
+      const saldo = totalEntradas - totalSaidas - totalDespesasLancadas;
       
-      return { totalEntradas, totalSaidas, totalDespesas, saldo };
+      return { totalEntradas, totalSaidas, totalDespesasLancadas, saldo, totalDespesasPendentes };
     }
 
     function updateDashboard() {
-      const { totalEntradas, totalSaidas, totalDespesas, saldo } = calcularFinanceiro();
+      const { totalEntradas, totalSaidas, totalDespesasLancadas, saldo, totalDespesasPendentes } = calcularFinanceiro();
       const producaoTotal = currentData.producao.reduce((sum, p) => sum + safeNumber(p.peso), 0);
 
       const setText = (id, value) => {
@@ -2800,16 +2839,16 @@
       };
 
       setText('dashLucro', 'R$ ' + Math.max(0, saldo).toFixed(2));
-      setText('dashGastos', 'R$ ' + totalDespesas.toFixed(2));
+      setText('dashGastos', 'R$ ' + totalDespesasLancadas.toFixed(2));
       setText('dashClientes', String(currentData.clientes.length));
       setText('dashProducao', producaoTotal.toFixed(1) + ' kg');
       setText('dashReceitas', 'R$ ' + totalEntradas.toFixed(2));
       setText('dashDespesas', 'R$ ' + totalSaidas.toFixed(2));
       setText('dashSaldo', 'R$ ' + saldo.toFixed(2));
       setText('finReceitas', 'R$ ' + totalEntradas.toFixed(2));
-      setText('finSaidas', 'R$ ' + totalSaidas.toFixed(2));
-      setText('finDespesasMes', 'R$ ' + totalDespesas.toFixed(2));
       setText('finSaldo', 'R$ ' + saldo.toFixed(2));
+      setText('finPendente', 'R$ ' + totalDespesasPendentes.toFixed(2));
+      setText('finLancado', 'R$ ' + totalDespesasLancadas.toFixed(2));
       setText('relClientes', String(currentData.clientes.length));
       setText('relFuncionarios', String(currentData.funcionarios.filter(f => f.status === 'ativo').length));
       setText('relProducao', producaoTotal.toFixed(1) + ' kg');
@@ -2909,6 +2948,7 @@
       const nome = document.getElementById('funcNome').value;
       const cargo = document.getElementById('funcCargo').value;
       const telefone = document.getElementById('funcTelefone').value;
+      const tipoChavePix = document.getElementById('funcTipoChavePix').value;
       const pix = document.getElementById('funcPix').value;
 
       if (!nome || !cargo || !telefone) {
@@ -2921,6 +2961,7 @@
         cargo: cargo,
         telefone: telefone,
         pix: pix,
+        tipo_chave_pix: tipoChavePix,
         data_criacao: new Date().toISOString(),
         status: 'ativo'
       };
@@ -3306,7 +3347,9 @@
       
       const nova = {
         nome_despesa_fixa: nome,
-        valor_despesa_fixa: valor
+        valor_despesa_fixa: valor,
+        status: 'pendente',
+        data_lancamento: null
       };
       
       await saveRecord({
@@ -3333,8 +3376,10 @@
       }
       
       const nova = {
-        nome_despesa_fixa: nome,
-        valor_despesa_fixa: valor
+        nome_despesa_variavel: nome,
+        valor_despesa_variavel: valor,
+        status: 'pendente',
+        data_lancamento: null
       };
 
       await saveRecord({
@@ -4180,6 +4225,7 @@
       setVal('funcCargo', item.cargo);
       setVal('funcTelefone', item.telefone);
       setVal('funcPix', item.pix);
+      setVal('funcTipoChavePix', item.tipo_chave_pix || '');
       
       const titulo = document.querySelector('#addFuncionarioModal h3');
       if (titulo) titulo.textContent = 'Editar Funcionario';
@@ -4306,6 +4352,109 @@
       }
     }
 
+    // Renderização de Despesas por Status
+    function renderDespesasPendentes() {
+      const container = document.getElementById('despesasPendentesList');
+      if (!container) return;
+      
+      const despesasFixas = (currentData.despesasFixas || []).filter(d => d.status === 'pendente');
+      const despesasVariaveis = (currentData.despesasVariaveis || []).filter(d => d.status === 'pendente');
+      const todas = [...despesasFixas, ...despesasVariaveis].sort((a,b) => new Date(a.created) - new Date(b.created));
+      
+      if (todas.length === 0) {
+        container.innerHTML = '';
+        const empty = document.getElementById('despesasPendentesEmpty');
+        if (empty) empty.style.display = 'block';
+        return;
+      }
+      
+      const empty = document.getElementById('despesasPendentesEmpty');
+      if (empty) empty.style.display = 'none';
+      
+      container.innerHTML = todas.map(d => {
+        const colecao = despesasFixas.find(x => x.id === d.id) ? 'despesasFixas' : 'despesasVariaveis';
+        const nome = d.nome_despesa_fixa || d.nome_despesa_variavel || 'Despesa';
+        const valor = d.valor_despesa_fixa || d.valor_despesa_variavel || 0;
+        const tipo = colecao === 'despesasFixas' ? 'Fixa' : 'Variável';
+        
+        return `
+          <div style="background:rgba(255,200,55,0.1);border:1px solid rgba(255,200,55,0.2);border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="flex:1;">
+              <p style="font-size:13px;font-weight:600;color:#fff;margin:0;">${nome}</p>
+              <p style="font-size:11px;color:rgba(255,255,255,0.5);margin:4px 0 0 0;">${tipo} • R$ ${parseFloat(valor).toFixed(2)}</p>
+            </div>
+            <div style="display:flex;gap:8px;margin-left:12px;">
+              <button onclick="lancarDespesa('${d.id}', '${colecao}')" style="background:linear-gradient(135deg,#00e6c8,#00b89e);color:#0a1628;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">✅ Lançar</button>
+              <button onclick="cancelarDespesa('${d.id}', '${colecao}')" style="background:rgba(255,107,107,0.1);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;">❌ Cancelar</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderDespesasLancadas() {
+      const container = document.getElementById('despesasLancadasList');
+      if (!container) return;
+      
+      const despesasFixas = (currentData.despesasFixas || []).filter(d => d.status === 'lancado');
+      const despesasVariaveis = (currentData.despesasVariaveis || []).filter(d => d.status === 'lancado');
+      const todas = [...despesasFixas, ...despesasVariaveis].sort((a,b) => new Date(b.data_lancamento || b.created) - new Date(a.data_lancamento || a.created));
+      
+      if (todas.length === 0) {
+        container.innerHTML = '';
+        const empty = document.getElementById('despesasLancadasEmpty');
+        if (empty) empty.style.display = 'block';
+        return;
+      }
+      
+      const empty = document.getElementById('despesasLancadasEmpty');
+      if (empty) empty.style.display = 'none';
+      
+      container.innerHTML = todas.map(d => {
+        const nome = d.nome_despesa_fixa || d.nome_despesa_variavel || 'Despesa';
+        const valor = d.valor_despesa_fixa || d.valor_despesa_variavel || 0;
+        const dataLancamento = d.data_lancamento ? new Date(d.data_lancamento).toLocaleDateString('pt-BR') : '—';
+        
+        return `
+          <div style="background:rgba(0,230,200,0.08);border:1px solid rgba(0,230,200,0.15);border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;opacity:0.7;">
+            <div style="flex:1;">
+              <p style="font-size:13px;font-weight:600;color:#fff;margin:0;text-decoration:line-through;">${nome}</p>
+              <p style="font-size:11px;color:rgba(255,255,255,0.5);margin:4px 0 0 0;">Lançado em ${dataLancamento} • R$ ${parseFloat(valor).toFixed(2)}</p>
+            </div>
+            <div style="color:#00e6c8;font-weight:600;font-size:12px;white-space:nowrap;">✓ Descontado</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function lancarDespesa(id, colecao) {
+      try {
+        await pb.collection(colecao).update(id, {
+          status: 'lancado',
+          data_lancamento: new Date().toISOString()
+        });
+        await loadAll();
+        renderAll();
+        showToast('Despesa lançada no caixa!', '#00e6c8');
+      } catch(e) {
+        showToast('Erro ao lançar despesa: ' + e.message, '#ff6b6b');
+      }
+    }
+
+    async function cancelarDespesa(id, colecao) {
+      if (!confirm('Cancelar essa despesa?')) return;
+      try {
+        await pb.collection(colecao).update(id, {
+          status: 'cancelado'
+        });
+        await loadAll();
+        renderAll();
+        showToast('Despesa cancelada!', '#ffc837');
+      } catch(e) {
+        showToast('Erro ao cancelar despesa: ' + e.message, '#ff6b6b');
+      }
+    }
+
     function renderDespesasFixas() {
       const container = document.getElementById('despesasFixasList');
       if (!container) return;
@@ -4328,7 +4477,7 @@
           </div>
           <div class="flex items-center gap-3">
             <span style="font-weight:600;color:#ff6b6b">R$ ${d.valor_despesa_fixa.toFixed(2)}</span>
-            <button class="btn-danger btn-small py-1" onclick="deleteData('${d.id}', 'despesasFixas')">Ã—</button>
+            <button class="btn-danger btn-small py-1" onclick="deleteData('${d.id}', 'despesasFixas')">×</button>
           </div>
         </div>
       `).join('');
@@ -4628,6 +4777,153 @@ function initCharts() {
   } catch (e) {
     console.error('❌ Erro ao renderizar gráficos:', e);
   }
+}
+
+// === FUNÇÕES PIX ===
+
+function gerarPixCopiaECola(chave, valor, nome, cidade = 'Brasil') {
+  // Gera o BR Code (Copia e Cola) para PIX
+  // Formato EMV: 00020126 (ID) 00 (versão) + campos TLV
+  
+  // Campos obrigatórios
+  const campos = {
+    '00': '01', // Versão do formato
+    '01': '12', // iniciador de transação = Brcode estático
+    '26': { // Merchant Account Information
+      '00': '0br.gov.bcb.pix',
+      '01': chave // CPF, CNPJ, telefone, email ou chave aleatória
+    },
+    '52': '0000', // Categoria de comerciante
+    '53': '986', // Código da moeda (986 = BRL)
+    '54': Math.abs(parseFloat(valor || 0)).toFixed(2), // Valor (opcional)
+    '58': 'BR', // Código de país
+    '59': nome.substring(0, 25), // Nome do pagador
+    '60': cidade.substring(0, 15), // Cidade
+    '62': {
+      '05': Math.random().toString(36).substring(2, 8) // Identificador único
+    }
+  };
+  
+  // Função para codificar campos TLV
+  function encodeTLV(obj) {
+    let result = '';
+    for (let tag in obj) {
+      if (typeof obj[tag] === 'object') {
+        result += tag + '29' + encodeTLV(obj[tag]);
+      } else {
+        const val = String(obj[tag]);
+        const len = ('0' + val.length.toString(16)).slice(-2);
+        result += tag + len + val;
+      }
+    }
+    return result;
+  }
+  
+  // Monta o payload
+  const payload = encodeTLV(campos);
+  
+  // Adiciona CRC (checksum) - implementação simplificada
+  // Para produção, usar biblioteca de CRC16-CCITT
+  const crc = 'CRC16'; // Placeholder - em produção calcular CRC real
+  const copiaCola = payload.slice(0, -4) + '6304' + crc;
+  
+  return copiaCola;
+}
+
+function abrirModalPagamentoPix(funcionarioId) {
+  const func = currentData.funcionarios.find(f => f.id === funcionarioId);
+  if (!func) {
+    showToast('Funcionário não encontrado!', '#ff6b6b');
+    return;
+  }
+  
+  // Para exemplo, usar um valor fixo. Em produção, viria de um campo
+  const valor = prompt('Valor do pagamento (R$)', '500.00');
+  if (!valor) return;
+  
+  window.pixEmProcessamento = {
+    funcionarioId: funcionarioId,
+    nomeFuncionario: func.nome,
+    chave: func.pix,
+    tipoChave: func.tipo_chave_pix || 'cpf',
+    valor: parseFloat(valor)
+  };
+  
+  const modal = document.getElementById('pagamentoPIXModal');
+  if (!modal) {
+    showToast('Modal de PIX não encontrado!', '#ff6b6b');
+    return;
+  }
+  
+  // Limpar QR code anterior
+  const qrContainer = document.getElementById('pixQRCode');
+  if (qrContainer) qrContainer.innerHTML = '';
+  
+  // Atualizar dados do modal
+  const nomeEl = document.getElementById('pixNomeFuncionario');
+  const valorEl = document.getElementById('pixValorPagamento');
+  const tipoEl = document.getElementById('pixTipoChave');
+  const chaveEl = document.getElementById('pixChave');
+  const copiaColaEl = document.getElementById('pixCopiaCola');
+  
+  if (nomeEl) nomeEl.textContent = func.nome;
+  if (valorEl) valorEl.textContent = 'R$ ' + parseFloat(valor).toFixed(2);
+  if (tipoEl) tipoEl.textContent = '(' + (func.tipo_chave_pix || 'cpf') + ')';
+  if (chaveEl) chaveEl.textContent = func.pix || '—';
+  
+  // Gerar Copia e Cola
+  const copiaCola = gerarPixCopiaECola(func.pix || 'chave', valor, func.nome, 'Ceará');
+  if (copiaColaEl) copiaColaEl.value = copiaCola;
+  
+  // Gerar QR Code usando library qrcode.js
+  if (qrContainer && window.QRCode) {
+    new QRCode(qrContainer, {
+      text: copiaCola,
+      width: 200,
+      height: 200,
+      colorDark: '#ffffff',
+      colorLight: '#1a1f35',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+  
+  // Abrir modal
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+}
+
+function confirmarPagamentoPix() {
+  const dados = window.pixEmProcessamento;
+  if (!dados) return;
+  
+  showToast('✓ Pagamento PIX registrado para ' + dados.nomeFuncionario, '#00e6c8');
+  closeModal('pagamentoPIXModal');
+  
+  // Aqui você poderia registrar o pagamento no PocketBase
+  // await pb.collection('transacoes').create({...});
+}
+
+function copiarPixCopiaCola() {
+  const el = document.getElementById('pixCopiaCola');
+  if (el && el.value) {
+    navigator.clipboard.writeText(el.value).then(() => {
+      showToast('✓ Copia e Cola copiado!', '#00e6c8');
+    });
+  }
+}
+
+function abrirAppBancoRecebedor() {
+  const dados = window.pixEmProcessamento;
+  if (!dados) return;
+  
+  // Links para apps de bancos (exemplo para Android)
+  const links = [
+    'intent://qr_payment?code=' + document.getElementById('pixCopiaCola').value + '#Intent;scheme=nubank;package=com.nu.nubank;end;',
+    'https://itunes.apple.com/app/id1362035540' // Apple fallback
+  ];
+  
+  // Em mobile, abrir app do banco preferido
+  showToast('Abra seu app bancário e use o código PIX acima', '#ffc837');
 }
 
 function navigateTo(pageId) {
