@@ -1982,6 +1982,16 @@ if (campoServico) {
       return d.toLocaleDateString('pt-BR');
     }
 
+    function formatarDataPDF(dataStr) {
+      if (!dataStr) return 'Sem data';
+      const data = dataStr instanceof Date ? dataStr : new Date(dataStr);
+      if (isNaN(data.getTime())) return dataStr;
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      const ano = data.getFullYear();
+      return `${dia}/${mes}/${ano}`;
+    }
+
     // Variável global para quinzena selecionada
     window.quinzenaSelecionada = 'q1';
 
@@ -2328,7 +2338,7 @@ if (campoServico) {
       doc.text('Relatório de Produção — ' + nomeFunc, 14, 27);
       doc.setFontSize(9);
       doc.setTextColor(120, 120, 120);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 34);
+      doc.text('Gerado em: ' + formatarDataPDF(new Date().toISOString()), 14, 34);
       doc.setDrawColor(0, 230, 200);
       doc.line(14, 37, 196, 37);
       doc.setFontSize(10);
@@ -2362,7 +2372,7 @@ if (campoServico) {
         footStyles: { fillColor: [220, 255, 250], textColor: [0, 100, 90], fontStyle: 'bold' }
       });
 
-      const dataHoje = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+      const dataHoje = formatarDataPDF(new Date().toISOString()).replace(/\//g, '-');
       const nomeArquivo = `producao-${nomeFunc.toLowerCase().replace(/\s+/g, '-')}-${dataHoje}.pdf`;
       doc.save(nomeArquivo);
       showToast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-right:6px;"><polyline points="20,6 9,17 4,12"/></svg> PDF gerado!', '#00e6c8');
@@ -2394,7 +2404,7 @@ if (campoServico) {
       const tituloperiodo = periodo + ' — ' + meses[(mes||1)-1] + '/' + ano;
       doc.text('Dossiê de Produção — ' + tituloperiodo, 14, 22);
       doc.setFontSize(9);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), pageW - 14, 22, {align:'right'});
+      doc.text('Gerado em: ' + formatarDataPDF(new Date().toISOString()), pageW - 14, 22, {align:'right'});
       y = 38;
 
       const todasProducoes = currentData.producao || [];
@@ -2489,7 +2499,7 @@ if (campoServico) {
         margin: {left:10, right:10}
       });
 
-      const dataHoje = new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+      const dataHoje = formatarDataPDF(new Date().toISOString()).replace(/\//g,'-');
       const arquivoPeriodo = (mes || '') + '-' + (ano || '') + '-' + (q || 'q1');
       doc.save('dossie-producao-' + arquivoPeriodo + '-' + dataHoje + '.pdf');
       showToast('Dossiê gerado com sucesso!', '#00e6c8');
@@ -3753,7 +3763,7 @@ if (campoServico) {
       doc.setFontSize(16);
       doc.text('Relatório de Clientes - Jaguaribe Pescados', 14, 15);
       doc.setFontSize(10);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 22);
+      doc.text('Gerado em: ' + formatarDataPDF(new Date().toISOString()), 14, 22);
       doc.autoTable({
         startY: 28,
         head: [['Nome', 'Telefone', 'Status']],
@@ -3764,7 +3774,7 @@ if (campoServico) {
         ]),
         theme: 'striped'
       });
-      doc.save('clientes-' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf');
+      doc.save('clientes-' + formatarDataPDF(new Date().toISOString()).replace(/\//g,'-') + '.pdf');
     }
 
     function exportarPDFFuncionarios() {
@@ -3773,7 +3783,7 @@ if (campoServico) {
       doc.setFontSize(16);
       doc.text('Relatório de Funcionários - Jaguaribe Pescados', 14, 15);
       doc.setFontSize(10);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 22);
+      doc.text('Gerado em: ' + formatarDataPDF(new Date().toISOString()), 14, 22);
       doc.autoTable({
         startY: 28,
         head: [['Nome', 'Cargo', 'Telefone', 'PIX', 'Status']],
@@ -3786,7 +3796,7 @@ if (campoServico) {
         ]),
         theme: 'striped'
       });
-      doc.save('funcionarios-' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf');
+      doc.save('funcionarios-' + formatarDataPDF(new Date().toISOString()).replace(/\//g,'-') + '.pdf');
     }
 
     function exportarPDFProducao() {
@@ -3795,7 +3805,7 @@ if (campoServico) {
       doc.setFontSize(16);
       doc.text('Relatório de Produção - Jaguaribe Pescados', 14, 15);
       doc.setFontSize(10);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 22);
+      doc.text('Gerado em: ' + formatarDataPDF(new Date().toISOString()), 14, 22);
       const totalPeso = currentData.producao.reduce((s, p) => s + (parseFloat(p.peso) || 0), 0);
       const totalValor = currentData.producao.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0);
       doc.autoTable({
@@ -3809,13 +3819,13 @@ if (campoServico) {
             p.periodo || '',
             (parseFloat(p.peso) || 0).toFixed(2),
             'R$ ' + (parseFloat(p.valor) || 0).toFixed(2),
-            p.data_producao ? formatarDataProducao(p.data_producao) : ''
+            p.data_producao ? formatarDataPDF(p.data_producao) : ''
           ];
         }),
         foot: [['', '', 'TOTAL', totalPeso.toFixed(2) + ' kg', 'R$ ' + totalValor.toFixed(2), '']],
         theme: 'striped'
       });
-      doc.save('producao-' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf');
+      doc.save('producao-' + formatarDataPDF(new Date().toISOString()).replace(/\//g,'-') + '.pdf');
     }
 
     function exportarPDFEstoque() {
@@ -3824,7 +3834,7 @@ if (campoServico) {
       doc.setFontSize(16);
       doc.text('Relatório de Estoque - Jaguaribe Pescados', 14, 15);
       doc.setFontSize(10);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 22);
+      doc.text('Gerado em: ' + formatarDataPDF(new Date().toISOString()), 14, 22);
       doc.autoTable({
         startY: 28,
         head: [['Tipo', 'Gramatura', 'Peso(kg)', 'Data do Lote', 'Status']],
@@ -3832,12 +3842,12 @@ if (campoServico) {
           e.tipo_lote || '',
           e.gramatura || '',
           (parseFloat(e.peso) || 0).toFixed(2),
-          e.data_lote ? new Date(e.data_lote).toLocaleDateString('pt-BR') : '',
+          e.data_lote ? formatarDataPDF(e.data_lote) : '',
           e.status || 'ativo'
         ]),
         theme: 'striped'
       });
-      doc.save('estoque-' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf');
+      doc.save('estoque-' + formatarDataPDF(new Date().toISOString()).replace(/\//g,'-') + '.pdf');
     }
 
     function exportarPDFFinanceiro() {
@@ -3846,7 +3856,7 @@ if (campoServico) {
       doc.setFontSize(16);
       doc.text('Relatório Financeiro - Jaguaribe Pescados', 14, 15);
       doc.setFontSize(10);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 22);
+      doc.text('Gerado em: ' + formatarDataPDF(new Date().toISOString()), 14, 22);
       const entradas = currentData.transacoes
         .filter(t => t.tipo_transacao === 'entrada')
         .reduce((s, t) => s + (parseFloat(t.valor_transacao) || 0), 0);
@@ -3863,11 +3873,11 @@ if (campoServico) {
           t.descricao || '',
           t.tipo_transacao || '',
           'R$ ' + (parseFloat(t.valor_transacao) || 0).toFixed(2),
-          t.data_transacao ? new Date(t.data_transacao).toLocaleDateString('pt-BR') : ''
+          t.data_transacao ? formatarDataPDF(t.data_transacao) : ''
         ]),
         theme: 'striped'
       });
-      doc.save('financeiro-' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf');
+      doc.save('financeiro-' + formatarDataPDF(new Date().toISOString()).replace(/\//g,'-') + '.pdf');
     }
 
     function gerarPDF() {
@@ -4900,7 +4910,7 @@ function exportarHistoricoFuncionario(fid, nome) {
   doc.text('PIX: ' + (func?.pix || 'Não cadastrado'),
     14, 30);
   doc.text('Gerado: ' +
-    new Date().toLocaleString('pt-BR'), 14, 36);
+    formatarDataPDF(new Date().toISOString()), 14, 36);
 
   const producoes = (currentData.producao || [])
     .filter(p => p.funcionario_id === fid)
@@ -4916,7 +4926,7 @@ function exportarHistoricoFuncionario(fid, nome) {
     startY: 42,
     head: [['Data','Serviço','Peso (kg)','Valor (R$)','Status']],
     body: producoes.map(p => [
-      new Date(p.data_producao).toLocaleDateString('pt-BR'),
+      p.data_producao ? formatarDataPDF(p.data_producao) : '—',
       p.servico || '—',
       parseFloat(p.peso||0).toFixed(2),
       'R$ ' + parseFloat(p.valor||0).toFixed(2),
