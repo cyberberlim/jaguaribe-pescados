@@ -977,7 +977,7 @@
          <div>
           <h2 class="font-heading text-2xl font-bold">Produção</h2>
           <p class="text-sm" style="color:rgba(255,255,255,0.4)">Registro de produção por funcionário</p>
-         </div><div style="display:flex;gap:8px;align-items:center;"><button class="btn-primary flex items-center gap-2" onclick="openModal('addProducaoModal')"> <i data-lucide="plus" style="width:18px;height:18px"></i>Registrar </button><button class="btn-secondary flex items-center gap-2" onclick="corrigirDescabecamentoDia4()" title="Corrigir Descabeçamento do dia 4"> <i data-lucide="alert-circle" style="width:18px;height:18px"></i>Corrigir Desc. Dia 4 </button>
+         </div><div style="display:flex;gap:8px;align-items:center;"><button class="btn-primary flex items-center gap-2" onclick="openModal('addProducaoModal')"> <i data-lucide="plus" style="width:18px;height:18px"></i>Registrar </button>
          <button onclick="exportarDossieProducao()" style="background:rgba(0,230,200,0.1);border:1px solid rgba(0,230,200,0.3);border-radius:10px;padding:10px 18px;color:#00e6c8;font-size:13px;font-weight:600;cursor:pointer;">↓ Dossiê PDF</button>
          <button onclick="limparProducaoView()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 18px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Limpar Produção</button></div>
         </div>
@@ -3377,45 +3377,6 @@ if (campoServico) {
       });
       const producaoValorInput = document.getElementById('producValor');
       if (producaoValorInput) producaoValorInput.value = '0.00';
-    }
-
-    async function corrigirDescabecamentoDia4() {
-      if (!confirm('Corrigir todos os registros de Descabeçamento do dia 4 que foram multiplicados por R$0,50 em vez de R$0,75?')) return;
-      
-      try {
-        const registros = currentData.producao || [];
-        let corrigidos = 0;
-        
-        for (const p of registros) {
-          if (!p.servico) continue;
-          
-          const servico = p.servico.toLowerCase();
-          if (servico !== 'descabecamento') continue;
-          
-          const data = new Date(p.data_producao);
-          if (data.getDate() !== 4) continue;
-          
-          const peso = parseFloat(p.peso || 0);
-          const valorAtual = parseFloat(p.valor || 0);
-          const valorEsperadoErrado = Math.round(peso * 0.50 * 100) / 100;
-          const valorCorreto = Math.round(peso * 0.75 * 100) / 100;
-          
-          if (Math.abs(valorAtual - valorEsperadoErrado) < 0.01) {
-            await pb.collection('producao').update(p.id, { valor: valorCorreto });
-            corrigidos++;
-          }
-        }
-        
-        if (corrigidos > 0) {
-          currentData.producao = await pb.collection('producao').getFullList({sort:'-created'});
-          renderProducao();
-          showToast(`✓ ${corrigidos} registro(s) corrigido(s)!`, '#00e6c8');
-        } else {
-          showToast('Nenhum registro para corrigir encontrado.', '#ffc837');
-        }
-      } catch (e) {
-        showToast('Erro ao corrigir: ' + e.message, '#ff6b6b');
-      }
     }
 
     function limparProducaoView() {
