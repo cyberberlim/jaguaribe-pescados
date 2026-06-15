@@ -951,11 +951,7 @@
                 <option value="empacotamento" data-preco="0.25">Empacotamento (R$0,25)</option>
                 <option value="tail-on" data-preco="2.50">Tail-on (R$2,50)</option>
                 <option value="tail-on-300" data-preco="3.00">Tail-on (R$3,00)</option>
-<<<<<<< HEAD
                 <option value="ppv" data-preco="2.75">Ppv (R$2,75)</option>
-=======
-                <option value="ppv" data-preco="2.50">PPV (R$2,50)</option>
->>>>>>> 7d3203f88f88037af382e99aed05a7873e0a2c2f
               </select>
             </div>
             <button onclick="aplicarConfiguracaoGlobal()" style="background:linear-gradient(135deg,#00e6c8,#00b89e);color:#0a1628;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">Aplicar a Todos</button>
@@ -1037,7 +1033,16 @@
           <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Email</label> <input type="email" id="configEmail" placeholder="contato@empresa.com">
           </div>
           <div class="mb-6"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Endereço</label> <textarea id="configEndereco" placeholder="Rua, número, cidade" rows="3" style="resize:vertical"></textarea>
-          </div><button type="submit" class="btn-primary w-full">Salvar Configurações</button>
+          </div>
+          <button type="button" onclick="corrigirDatasProducao()"
+            style="background:rgba(255,100,100,0.1);
+              border:1px solid rgba(255,100,100,0.3);
+              border-radius:10px;padding:12px 20px;
+              color:#ff6b6b;font-size:13px;
+              font-weight:600;cursor:pointer;">
+            ⚠️ Corrigir Datas de Produção (-1 dia)
+          </button>
+          <div style="height:16px"></div><button type="submit" class="btn-primary w-full">Salvar Configurações</button>
          </form>
         </div>
        </div>
@@ -1974,11 +1979,17 @@ if (campoServico) {
       `).join('');
     }
 
+    function formatarDataBR(dataStr) {
+      if (!dataStr) return '—';
+      const apenasData = dataStr.split('T')[0];
+      const [ano, mes, dia] = apenasData.split('-');
+      if (!ano || !mes || !dia) return dataStr;
+      return dia + '/' + mes + '/' + ano;
+    }
+
     function formatarData(dataStr) {
       if (!dataStr) return 'Sem data';
-      const d = new Date(dataStr);
-      if (isNaN(d.getTime())) return dataStr;
-      return d.toLocaleDateString('pt-BR');
+      return formatarDataBR(dataStr);
     }
 
     // Variável global para quinzena selecionada
@@ -3193,11 +3204,7 @@ if (campoServico) {
     }
 
     function formatarDataProducao(dataStr) {
-      if (!dataStr) return 'Sem data';
-      const d = new Date(dataStr);
-      if (isNaN(d.getTime())) return dataStr;
-      const local = new Date(d.getTime() + d.getTimezoneOffset() * -60000);
-      return local.toLocaleDateString('pt-BR');
+      return formatarDataBR(dataStr);
     }
 
     function aplicarConfiguracaoGlobal() {
@@ -3351,6 +3358,38 @@ if (campoServico) {
     function salvarConfiguracoes(e) {
       e.preventDefault();
       showToast('✓ Configurações salvas!');
+    }
+
+    async function corrigirDatasProducao() {
+      if (!confirm('Isso vai subtrair 1 dia de TODAS as datas de produção no banco. Confirma?')) return;
+
+      const producoes = currentData.producao || [];
+      let corrigidos = 0;
+      let erros = 0;
+
+      for (const p of producoes) {
+        if (!p.data_producao) continue;
+        try {
+          const dataAtual = new Date(p.data_producao);
+          dataAtual.setUTCDate(dataAtual.getUTCDate() - 1);
+          dataAtual.setUTCHours(12, 0, 0, 0);
+          const novaData = dataAtual.toISOString();
+
+          await pb.collection('producao').update(p.id, {
+            data_producao: novaData
+          });
+          corrigidos++;
+        } catch (e) {
+          console.error('Erro ao corrigir', p.id, e);
+          erros++;
+        }
+      }
+
+      showToast('Corrigido: ' + corrigidos + ' | Erros: ' + erros, '#00e6c8');
+
+      currentData.producao = await pb.collection('producao')
+        .getFullList({ sort: '-created' });
+      renderProducao();
     }
 
     function escapeHTML(text) {
@@ -4217,7 +4256,7 @@ if (campoServico) {
           periodo: periodo,
           peso: peso,
           valor: valor,
-          data_producao: data_producao
+          data_producao: data_producao + 'T12:00:00.000Z'
         });
         await loadAll();
         renderAll();
@@ -4731,8 +4770,7 @@ function verHistoricoFuncionario(fid, nome) {
         rgba(255,255,255,0.05);">
         <td style="padding:8px;font-size:12px;
           color:rgba(255,255,255,0.7);">
-          ${new Date(p.data_producao)
-            .toLocaleDateString('pt-BR')}
+          ${formatarDataBR(p.data_producao)}
         </td>
         <td style="padding:8px;font-size:12px;
           color:rgba(255,255,255,0.7);">
@@ -4915,7 +4953,7 @@ function exportarHistoricoFuncionario(fid, nome) {
     startY: 42,
     head: [['Data','Serviço','Peso (kg)','Valor (R$)','Status']],
     body: producoes.map(p => [
-      new Date(p.data_producao).toLocaleDateString('pt-BR'),
+      formatarDataBR(p.data_producao),
       p.servico || '—',
       parseFloat(p.peso||0).toFixed(2),
       'R$ ' + parseFloat(p.valor||0).toFixed(2),
