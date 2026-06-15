@@ -9,6 +9,7 @@
   <script src="https://unpkg.com/pocketbase/dist/pocketbase.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Poppins:wght@600;700;800&amp;display=swap" rel="stylesheet">
   <style>
 
@@ -710,6 +711,7 @@
          </div>
         </div>
         <div class="mb-6"><button class="btn-primary flex items-center gap-2 mb-4" onclick="openModal('addTransacaoModal')"> <i data-lucide="plus" style="width:18px;height:18px"></i>Nova Transação </button>
+         <button class="btn-secondary flex items-center gap-2 mb-4" onclick="abrirLancamentoDespesas()"> <i data-lucide="zap" style="width:18px;height:18px"></i>Lançar Despesas </button>
          <div class="glass rounded-xl p-6">
           <div class="overflow-x-auto">
            <table class="w-full text-sm">
@@ -1079,8 +1081,6 @@
       <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Cargo</label> <select id="funcCargo" required> <option value="">Selecione o cargo</option> <option value="fixo">Funcionário Fixo</option> <option value="produtor">Produtor</option> </select>
       </div>
       <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Telefone</label> <input type="tel" id="funcTelefone" placeholder="(XX) 99999-9999" required>
-      </div>
-      <div class="mb-6"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Chave PIX</label> <input type="text" id="funcPix" placeholder="Chave PIX">
       </div>
       <div class="flex gap-3"><button type="button" class="btn-secondary flex-1" onclick="closeModal(null, 'addFuncionarioModal')">Cancelar</button> <button type="submit" class="btn-primary flex-1">Salvar</button>
       </div>
@@ -1559,7 +1559,7 @@
               : '#ff6b6b';
 
           const data = h.data_processamento
-            ? new Date(h.data_processamento).toLocaleDateString('pt-BR')
+            ? formatarDataBR(h.data_processamento)
             : '—';
 
           const loteObj = currentData.estoque?.find(e => e.id === h.lote_id);
@@ -1879,10 +1879,6 @@ if (campoServico) {
               <span style="color:rgba(255,255,255,0.5)">Telefone:</span>
               <span>${f.telefone}</span>
             </div>
-            <div style="display:flex;justify-content:space-between">
-              <span style="color:rgba(255,255,255,0.5)">PIX:</span>
-              <span style="font-family:monospace">${f.pix || '-'}</span>
-            </div>
           </div>
           <div class="flex gap-2 mt-auto">
             <button onclick="verHistoricoFuncionario('${f.id}','${f.nome}')"
@@ -1934,58 +1930,50 @@ if (campoServico) {
 
     function renderTransacoes() {
       const tbody = document.getElementById('transacoesList');
-      if (currentData.transacoes.length === 0) {
+      if (!tbody) return;
+
+      if (!currentData.transacoes || currentData.transacoes.length === 0) {
         tbody.innerHTML = '';
-        document.getElementById('transacoesEmpty').style.display = 'block';
+        const empty = document.getElementById('transacoesEmpty');
+        if (empty) empty.style.display = 'block';
         return;
       }
-      document.getElementById('transacoesEmpty').style.display = 'none';
+
+      const empty = document.getElementById('transacoesEmpty');
+      if (empty) empty.style.display = 'none';
+
       tbody.innerHTML = currentData.transacoes.map(t => `
         <tr class="table-row">
-          <td class="py-3 px-4">${t.descricao}</td>
+          <td class="py-3 px-4">${t.descricao || '—'}</td>
           <td class="py-3 px-4"><span class="status-badge ${t.tipo_transacao === 'entrada' ? 'badge-ativo' : 'badge-inativo'}">${t.tipo_transacao === 'entrada' ? 'Receita' : 'Despesa'}</span></td>
           <td class="py-3 px-4" style="font-weight:600;color:${t.tipo_transacao === 'entrada' ? '#00e6c8' : '#ff6b6b'}">R$ ${parseFloat(t.valor_transacao || 0).toFixed(2)}</td>
-          <td class="py-3 px-4" style="color:rgba(255,255,255,0.6)">${new Date(t.data_transacao).toLocaleDateString('pt-BR')}</td>
-          <td class="py-3 px-4"><div class="flex justify-center"><button class="btn-danger py-1 px-2 text-xs" onclick="deletarTransacao('${t.id}')">Excluir</button></div></td>
+          <td class="py-3 px-4" style="color:rgba(255,255,255,0.6)">${formatarDataBR(t.data_transacao)}</td>
+          <td class="py-3 px-4 text-center">
+            <button class="btn-danger btn-small py-1" onclick="deletarTransacao('${t.id}')">Excluir</button>
+          </td>
         </tr>
       `).join('');
     }
 
-    function renderEstoque() {
-      const tbody = document.getElementById('estoqueList');
-      if (currentData.estoque.length === 0) {
-        tbody.innerHTML = '';
-        document.getElementById('estoqueEmpty').style.display = 'block';
-        return;
-      }
-      document.getElementById('estoqueEmpty').style.display = 'none';
-      tbody.innerHTML = currentData.estoque.map(e => `
-        <tr class="table-row">
-          <td class="py-3 px-4">${e.tipo_lote || '-'}</td>
-          <td class="py-3 px-4">${e.gramatura || '-'}</td>
-          <td class="py-3 px-4" style="color:#00e6c8;font-weight:600">${e.peso || 0} kg</td>
-          <td class="py-3 px-4" style="color:rgba(255,255,255,0.6)">${e.data_lote ? new Date(e.data_lote).toLocaleDateString('pt-BR') : '-'}</td>
-          <td class="py-3 px-4"><div class="flex gap-2 justify-center">
-            <button onclick="editarEstoque('${e.id}')"
-              style="background:rgba(0,230,200,0.1);
-                border:1px solid rgba(0,230,200,0.2);
-                border-radius:6px;padding:4px 10px;
-                color:#00e6c8;cursor:pointer;font-size:12px;
-                font-weight:600;">
-              Editar
-            </button>
-            <button class="btn-danger py-1 px-2 text-xs" onclick="apagarEstoque('${e.id}')">Excluir</button>
-          </div></td>
-        </tr>
-      `).join('');
+    function parseDateLocal(dateStr) {
+      if (!dateStr) return null;
+      const [ano, mes, dia] = dateStr.split('-').map(Number);
+      if (!ano || !mes || !dia) return null;
+      return new Date(Date.UTC(ano, mes - 1, dia, 12, 0, 0));
     }
 
     function formatarDataBR(dataStr) {
       if (!dataStr) return '—';
-      const apenasData = dataStr.split('T')[0];
-      const [ano, mes, dia] = apenasData.split('-');
-      if (!ano || !mes || !dia) return dataStr;
-      return dia + '/' + mes + '/' + ano;
+      const data = new Date(dataStr);
+      if (Number.isNaN(data.getTime())) return dataStr;
+      return data.toLocaleDateString('pt-BR');
+    }
+
+    function formatarDataHora(dataStr) {
+      if (!dataStr) return '—';
+      const data = new Date(dataStr);
+      if (Number.isNaN(data.getTime())) return dataStr;
+      return data.toLocaleString('pt-BR');
     }
 
     function formatarData(dataStr) {
@@ -2339,7 +2327,7 @@ if (campoServico) {
       doc.text('Relatório de Produção — ' + nomeFunc, 14, 27);
       doc.setFontSize(9);
       doc.setTextColor(120, 120, 120);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 34);
+      doc.text('Gerado em: ' + formatarDataHora(new Date().toISOString()), 14, 34);
       doc.setDrawColor(0, 230, 200);
       doc.line(14, 37, 196, 37);
       doc.setFontSize(10);
@@ -2373,7 +2361,7 @@ if (campoServico) {
         footStyles: { fillColor: [220, 255, 250], textColor: [0, 100, 90], fontStyle: 'bold' }
       });
 
-      const dataHoje = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+      const dataHoje = formatarDataBR(new Date().toISOString()).replace(/\//g, '-');
       const nomeArquivo = `producao-${nomeFunc.toLowerCase().replace(/\s+/g, '-')}-${dataHoje}.pdf`;
       doc.save(nomeArquivo);
       showToast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-right:6px;"><polyline points="20,6 9,17 4,12"/></svg> PDF gerado!', '#00e6c8');
@@ -2405,7 +2393,7 @@ if (campoServico) {
       const tituloperiodo = periodo + ' — ' + meses[(mes||1)-1] + '/' + ano;
       doc.text('Dossiê de Produção — ' + tituloperiodo, 14, 22);
       doc.setFontSize(9);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), pageW - 14, 22, {align:'right'});
+      doc.text('Gerado em: ' + formatarDataHora(new Date().toISOString()), pageW - 14, 22, {align:'right'});
       y = 38;
 
       const todasProducoes = currentData.producao || [];
@@ -2500,7 +2488,7 @@ if (campoServico) {
         margin: {left:10, right:10}
       });
 
-      const dataHoje = new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+      const dataHoje = formatarDataBR(new Date().toISOString()).replace(/\//g,'-');
       const arquivoPeriodo = (mes || '') + '-' + (ano || '') + '-' + (q || 'q1');
       doc.save('dossie-producao-' + arquivoPeriodo + '-' + dataHoje + '.pdf');
       showToast('Dossiê gerado com sucesso!', '#00e6c8');
@@ -2562,6 +2550,12 @@ if (campoServico) {
       const taxa = servico === 'descabeçamento' ? 0.50 : 2.50;
       const valor = quantidade * taxa;
 
+      const dataIso = parseDateLocal(dataProducao)?.toISOString();
+      if (!dataIso) {
+        showToast('Data inválida!', '#ff6b6b');
+        return;
+      }
+
       const dadosAtualizados = {
         funcionario_id: funcionario,
         servico: servico,
@@ -2569,7 +2563,7 @@ if (campoServico) {
         peso: quantidade,
         valor: valor,
         codigo_pagamento: codigo,
-        data_producao: dataProducao + 'T12:00:00.000Z'
+        data_producao: dataIso
       };
 
       pb.collection('producao').update(id, dadosAtualizados)
@@ -2704,17 +2698,20 @@ if (campoServico) {
                 R$ ${totalPagar.toFixed(2)}\
               </div>\
             </div>\
-            <div style="margin-bottom:12px;">\
-              <label style="font-size:12px;color:rgba(255,255,255,0.5);\
-                display:block;margin-bottom:6px;">\
-                Chave Pix do Funcionário\
-              </label>\
-              <div style="background:rgba(255,255,255,0.06);\
-                border:1px solid rgba(255,255,255,0.1);\
-                border-radius:10px;padding:12px;font-size:14px;color:#fff;">\
-                ${func ? (func.pix||'Não cadastrado') : '—'}\
-              </div>\
-            </div>\
+            <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:20px;">
+              <div id="pixQrContainer_${fid}" style="min-width:180px;min-height:180px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:16px;display:flex;align-items:center;justify-content:center;">
+                ${func?.pix ? '' : '<span style="color:rgba(255,255,255,0.45);font-size:13px;text-align:center;">PIX não<br>cadastrado</span>'}
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:12px;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px;">
+                  Chave Pix do Funcionário
+                </label>
+                <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;font-size:14px;color:#fff;">
+                  ${func ? (func.pix||'Não cadastrado') : '—'}
+                </div>
+                ${func?.pix ? '<p style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:10px;line-height:1.4;">Use o QR Code acima ou copie a chave para pagar.</p>' : ''}
+              </div>
+            </div>
             <div style="margin-bottom:20px;">\
               <label style="font-size:12px;color:rgba(255,255,255,0.5);\
                 display:block;margin-bottom:6px;">\
@@ -2737,6 +2734,18 @@ if (campoServico) {
           </div>\
         </div>\
       `);
+      const qrContainer = document.getElementById(`pixQrContainer_${fid}`);
+      if (func?.pix && window.QRCode && qrContainer) {
+        try {
+          new QRCode(qrContainer, {
+            text: func.pix,
+            width: 180,
+            height: 180
+          });
+        } catch (err) {
+          console.warn('Não foi possível gerar QR Code PIX:', err);
+        }
+      }
     }
 
     async function confirmarPagamentoFuncionario(ids) {
@@ -2745,18 +2754,29 @@ if (campoServico) {
         showToast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-right:6px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Informe o código do comprovante!', '#ffc837');
         return;
       }
+
       try {
         for (const id of ids) {
-          await pb.collection('producao').update(id, {codigo_pagamento: codigo});
+          await pb.collection('producao').update(id, { codigo_pagamento: codigo });
         }
         document.getElementById('modalPagFunc')?.remove();
         currentData.producao = await pb.collection('producao')
-          .getFullList({sort:'-created'});
+          .getFullList({ sort: '-created' });
         renderProducao();
         showToast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-right:6px;"><polyline points="20,6 9,17 4,12"/></svg> Pagamento confirmado!', '#00e6c8');
-      } catch(e) {
+      } catch (e) {
         showToast('Erro: ' + e.message, '#ff6b6b');
       }
+    }
+
+    function copiarPixChave(chave) {
+      if (!chave) {
+        showToast('PIX não cadastrado.', '#ffc837');
+        return;
+      }
+      navigator.clipboard.writeText(chave)
+        .then(() => showToast('Chave PIX copiada!', '#00e6c8'))
+        .catch(() => showToast('Falha ao copiar a chave PIX.', '#ff6b6b'));
     }
 
     function atualizarEstatisticasProducao() {
@@ -2920,7 +2940,6 @@ if (campoServico) {
       const nome = document.getElementById('funcNome').value;
       const cargo = document.getElementById('funcCargo').value;
       const telefone = document.getElementById('funcTelefone').value;
-      const pix = document.getElementById('funcPix').value;
 
       if (!nome || !cargo || !telefone) {
         showToast('Preencha os campos obrigatórios!', '#ff6b6b');
@@ -2931,7 +2950,6 @@ if (campoServico) {
         nome: nome,
         cargo: cargo,
         telefone: telefone,
-        pix: pix,
         data_criacao: new Date().toISOString(),
         status: 'ativo'
       };
@@ -2968,11 +2986,17 @@ if (campoServico) {
         return;
       }
       
+      const dataIso = parseDateLocal(data)?.toISOString();
+      if (!dataIso) {
+        showToast('Data inválida!', '#ff6b6b');
+        return;
+      }
+
       const nova = {
         descricao: descricao,
         tipo_transacao: tipo,
         valor_transacao: valor,
-        data_transacao: data
+        data_transacao: dataIso
       };
 
       await saveRecord({
@@ -3000,11 +3024,17 @@ if (campoServico) {
         return;
       }
       
+      const dataIso = parseDateLocal(data)?.toISOString();
+      if (!dataIso) {
+        showToast('Data inválida!', '#ff6b6b');
+        return;
+      }
+
       const dados = {
         tipo_lote: nome,
         gramatura: gramatura,
         peso: peso,
-        data_lote: data,
+        data_lote: dataIso,
         status: 'ativo'
       };
 
@@ -3232,7 +3262,7 @@ if (campoServico) {
 
       const nomeServico = servicoEl.options[servicoEl.selectedIndex]?.text || servico;
       const nomeTurno = turnoEl.options[turnoEl.selectedIndex]?.text || turno;
-      const dataFormatada = new Date(data + 'T12:00:00').toLocaleDateString('pt-BR');
+      const dataFormatada = formatarDataBR(parseDateLocal(data)?.toISOString());
 
       const status = document.getElementById('globalStatus');
       if (status) {
@@ -3267,6 +3297,12 @@ if (campoServico) {
         || (preco * peso).toFixed(2));
       const servicoValor = selectServico.value;
       
+      const dataIso = parseDateLocal(dataProducao)?.toISOString();
+      if (!dataIso) {
+        showToast('Data inválida!', '#ff6b6b');
+        return;
+      }
+
       const novo = {
         funcionario_id: funcionario,
         servico: servico,
@@ -3274,7 +3310,7 @@ if (campoServico) {
         peso: quantidade,
         valor: valor,
         codigo_pagamento: '',
-        data_producao: dataProducao + 'T12:00:00.000Z'
+        data_producao: dataIso
       };
 
       await saveRecord({
@@ -3313,7 +3349,8 @@ if (campoServico) {
       
       const nova = {
         nome_despesa_fixa: nome,
-        valor_despesa_fixa: valor
+        valor_despesa_fixa: valor,
+        lancado: false
       };
       
       await saveRecord({
@@ -3341,7 +3378,8 @@ if (campoServico) {
       
       const nova = {
         nome_despesa_fixa: nome,
-        valor_despesa_fixa: valor
+        valor_despesa_fixa: valor,
+        lancado: false
       };
 
       await saveRecord({
@@ -3792,7 +3830,7 @@ if (campoServico) {
       doc.setFontSize(16);
       doc.text('Relatório de Clientes - Jaguaribe Pescados', 14, 15);
       doc.setFontSize(10);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 22);
+      doc.text('Gerado em: ' + formatarDataHora(new Date().toISOString()), 14, 22);
       doc.autoTable({
         startY: 28,
         head: [['Nome', 'Telefone', 'Status']],
@@ -3803,7 +3841,7 @@ if (campoServico) {
         ]),
         theme: 'striped'
       });
-      doc.save('clientes-' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf');
+      doc.save('clientes-' + formatarDataBR(new Date().toISOString()).replace(/\//g,'-') + '.pdf');
     }
 
     function exportarPDFFuncionarios() {
@@ -3812,7 +3850,7 @@ if (campoServico) {
       doc.setFontSize(16);
       doc.text('Relatório de Funcionários - Jaguaribe Pescados', 14, 15);
       doc.setFontSize(10);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 22);
+      doc.text('Gerado em: ' + formatarDataHora(new Date().toISOString()), 14, 22);
       doc.autoTable({
         startY: 28,
         head: [['Nome', 'Cargo', 'Telefone', 'PIX', 'Status']],
@@ -3825,7 +3863,7 @@ if (campoServico) {
         ]),
         theme: 'striped'
       });
-      doc.save('funcionarios-' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf');
+      doc.save('funcionarios-' + formatarDataBR(new Date().toISOString()).replace(/\//g,'-') + '.pdf');
     }
 
     function exportarPDFProducao() {
@@ -3834,7 +3872,7 @@ if (campoServico) {
       doc.setFontSize(16);
       doc.text('Relatório de Produção - Jaguaribe Pescados', 14, 15);
       doc.setFontSize(10);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 22);
+      doc.text('Gerado em: ' + formatarDataHora(new Date().toISOString()), 14, 22);
       const totalPeso = currentData.producao.reduce((s, p) => s + (parseFloat(p.peso) || 0), 0);
       const totalValor = currentData.producao.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0);
       doc.autoTable({
@@ -3854,7 +3892,7 @@ if (campoServico) {
         foot: [['', '', 'TOTAL', totalPeso.toFixed(2) + ' kg', 'R$ ' + totalValor.toFixed(2), '']],
         theme: 'striped'
       });
-      doc.save('producao-' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf');
+      doc.save('producao-' + formatarDataBR(new Date().toISOString()).replace(/\//g,'-') + '.pdf');
     }
 
     function exportarPDFEstoque() {
@@ -3863,7 +3901,7 @@ if (campoServico) {
       doc.setFontSize(16);
       doc.text('Relatório de Estoque - Jaguaribe Pescados', 14, 15);
       doc.setFontSize(10);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 22);
+      doc.text('Gerado em: ' + formatarDataHora(new Date().toISOString()), 14, 22);
       doc.autoTable({
         startY: 28,
         head: [['Tipo', 'Gramatura', 'Peso(kg)', 'Data do Lote', 'Status']],
@@ -3871,12 +3909,12 @@ if (campoServico) {
           e.tipo_lote || '',
           e.gramatura || '',
           (parseFloat(e.peso) || 0).toFixed(2),
-          e.data_lote ? new Date(e.data_lote).toLocaleDateString('pt-BR') : '',
+          formatarDataBR(e.data_lote),
           e.status || 'ativo'
         ]),
         theme: 'striped'
       });
-      doc.save('estoque-' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf');
+      doc.save('estoque-' + formatarDataBR(new Date().toISOString()).replace(/\//g,'-') + '.pdf');
     }
 
     function exportarPDFFinanceiro() {
@@ -3885,7 +3923,7 @@ if (campoServico) {
       doc.setFontSize(16);
       doc.text('Relatório Financeiro - Jaguaribe Pescados', 14, 15);
       doc.setFontSize(10);
-      doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 22);
+      doc.text('Gerado em: ' + formatarDataHora(new Date().toISOString()), 14, 22);
       const entradas = currentData.transacoes
         .filter(t => t.tipo_transacao === 'entrada')
         .reduce((s, t) => s + (parseFloat(t.valor_transacao) || 0), 0);
@@ -3902,11 +3940,11 @@ if (campoServico) {
           t.descricao || '',
           t.tipo_transacao || '',
           'R$ ' + (parseFloat(t.valor_transacao) || 0).toFixed(2),
-          t.data_transacao ? new Date(t.data_transacao).toLocaleDateString('pt-BR') : ''
+          formatarDataBR(t.data_transacao)
         ]),
         theme: 'striped'
       });
-      doc.save('financeiro-' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf');
+      doc.save('financeiro-' + formatarDataBR(new Date().toISOString()).replace(/\//g,'-') + '.pdf');
     }
 
     function gerarPDF() {
@@ -4218,7 +4256,6 @@ if (campoServico) {
       setVal('funcNome', item.nome);
       setVal('funcCargo', item.cargo);
       setVal('funcTelefone', item.telefone);
-      setVal('funcPix', item.pix);
       
       const titulo = document.querySelector('#addFuncionarioModal h3');
       if (titulo) titulo.textContent = 'Editar Funcionario';
@@ -4250,6 +4287,12 @@ if (campoServico) {
       const data_producao = prompt('Data de produção', producao.data_producao ? new Date(producao.data_producao).toISOString().slice(0, 10) : '');
       if (data_producao === null) return;
 
+      const dataIso = parseDateLocal(data_producao)?.toISOString();
+      if (!dataIso) {
+        showToast('Data inválida!', '#ff6b6b');
+        return;
+      }
+
       try {
         await pb.collection('producao').update(id, {
           funcionario_id: funcionario_id,
@@ -4257,7 +4300,7 @@ if (campoServico) {
           periodo: periodo,
           peso: peso,
           valor: valor,
-          data_producao: data_producao + 'T12:00:00.000Z'
+          data_producao: dataIso
         });
         await loadAll();
         renderAll();
@@ -4367,7 +4410,7 @@ if (campoServico) {
           </div>
           <div class="flex items-center gap-3">
             <span style="font-weight:600;color:#ff6b6b">R$ ${d.valor_despesa_fixa.toFixed(2)}</span>
-            <button class="btn-danger btn-small py-1" onclick="deleteData('${d.id}', 'despesasFixas')">Ã—</button>
+            ${d.lancado ? '<span style="font-size:12px;color:#00e6c8;font-weight:700;">Lançado</span>' : `<button class="btn-danger btn-small py-1" onclick="deleteData('${d.id}', 'despesasFixas')">×</button>`}
           </div>
         </div>
       `).join('');
@@ -4395,13 +4438,52 @@ if (campoServico) {
           </div>
           <div class="flex items-center gap-3">
             <span style="font-weight:600;color:#ffc837">R$ ${d.valor_despesa_fixa.toFixed(2)}</span>
-            <button class="btn-danger btn-small py-1" onclick="deleteData('${d.id}', 'despesasVariaveis')">Ã—</button>
+            ${d.lancado ? '<span style="font-size:12px;color:#00e6c8;font-weight:700;">Lançado</span>' : `<button class="btn-danger btn-small py-1" onclick="deleteData('${d.id}', 'despesasVariaveis')">×</button>`}
           </div>
         </div>
       `).join('');
     }
 
-    
+    async function abrirLancamentoDespesas() {
+      const despesasFixas = (currentData.despesasFixas || []).filter(d => !d.lancado);
+      const despesasVariaveis = (currentData.despesasVariaveis || []).filter(d => !d.lancado);
+
+      if (despesasFixas.length === 0 && despesasVariaveis.length === 0) {
+        showToast('Não há despesas novas para lançar.', '#ffc837');
+        return;
+      }
+
+      const dataLancamento = new Date().toISOString();
+      try {
+        for (const despesa of despesasFixas) {
+          await pb.collection('transacoes').create({
+            descricao: despesa.nome_despesa_fixa || 'Despesa fixa',
+            tipo_transacao: 'saida',
+            valor_transacao: parseFloat(despesa.valor_despesa_fixa || 0),
+            data_transacao: dataLancamento
+          });
+          await pb.collection('despesasFixas').update(despesa.id, { lancado: true });
+        }
+
+        for (const despesa of despesasVariaveis) {
+          await pb.collection('transacoes').create({
+            descricao: despesa.nome_despesa_fixa || 'Despesa variável',
+            tipo_transacao: 'saida',
+            valor_transacao: parseFloat(despesa.valor_despesa_fixa || 0),
+            data_transacao: dataLancamento
+          });
+          await pb.collection('despesasVariaveis').update(despesa.id, { lancado: true });
+        }
+
+        await loadAll();
+        renderAll();
+        showToast('✓ Despesas lançadas com sucesso!');
+      } catch (error) {
+        console.error('Erro ao lançar despesas:', error);
+        showToast('Erro ao lançar despesas.', '#ff6b6b');
+      }
+    }
+
 function abrirSaidaEstoque(estoqueId) {
   showToast('Funcionalidade em desenvolvimento', '#00d4ff');
 }
@@ -4938,7 +5020,7 @@ function exportarHistoricoFuncionario(fid, nome) {
   doc.text('PIX: ' + (func?.pix || 'Não cadastrado'),
     14, 30);
   doc.text('Gerado: ' +
-    new Date().toLocaleString('pt-BR'), 14, 36);
+    formatarDataHora(new Date().toISOString()), 14, 36);
 
   const producoes = (currentData.producao || [])
     .filter(p => p.funcionario_id === fid)
