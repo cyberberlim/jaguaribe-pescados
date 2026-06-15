@@ -1319,25 +1319,6 @@
     producao: currentData.producao.length
   });
 
-  // Dados mock para demo/teste (se vazio)
-  if (currentData.transacoes.length === 0) {
-    currentData.transacoes = [
-      { id: '1', tipo_transacao: 'entrada', valor_transacao: 5000 },
-      { id: '2', tipo_transacao: 'saida', valor_transacao: 2000 }
-    ];
-  }
-  if (currentData.despesasFixas.length === 0) {
-    currentData.despesasFixas = [
-      { id: '1', valor_despesa_fixa: 3000 }
-    ];
-  }
-  if (currentData.producao.length === 0) {
-    currentData.producao = [
-      { id: '1', servico: 'descabeçamento', peso: 1000 },
-      { id: '2', servico: 'filé', peso: 800 }
-    ];
-  }
-
   setupRealtime();
 }
 
@@ -2025,24 +2006,6 @@ if (campoServico) {
       return new Date(year, month - 1, day);
     }
 
-    function gerarPix(chave, valor, nome) {
-      function f(id, value) {
-        return id + 
-        value.length.toString().padStart(2,'0') 
-        + value;
-      }
-      const mai = f('00','br.gov.bcb.pix') + 
-                   f('01', chave);
-      return f('00','01') +
-        f('26', mai) +
-        f('52','0000') +
-        f('53','986') +
-        f('54', valor.toFixed(2)) +
-        f('58','BR') +
-        f('59', nome.substring(0,25)) +
-        f('60','PARAJURU') +
-        f('62', f('05','***'));
-    }
     function formatarDataPDF(dataStr) {
       if (!dataStr) return 'Sem data';
       const data = dataStr instanceof Date ? dataStr : new Date(dataStr);
@@ -2693,7 +2656,7 @@ if (campoServico) {
         });
     }
 
-    function abrirPagamentoFuncionario(fid) {
+    async function abrirPagamentoFuncionario(fid) {
       const func = currentData.funcionarios.find(f => f.id === fid);
       const registros = currentData.producao.filter(
         p => p.funcionario_id === fid && !p.codigo_pagamento
@@ -2729,7 +2692,54 @@ if (campoServico) {
       }).join('');
 
       const ids = registros.map(p => p.id);
-      const pixString = gerarPix(func ? (func.pix||'') : '', totalPagar, func ? func.nome : '');
+
+      function gerarCodigoPix(chave, valor, nome) {
+        function pixField(id, value) {
+          const v = String(value);
+          return id + v.length.toString().padStart(2, '0') + v;
+        }
+        const mai = pixField('00', 'br.gov.bcb.pix') + pixField('01', chave);
+        return pixField('00', '01') +
+          pixField('26', mai) +
+          pixField('52', '0000') +
+          pixField('53', '986') +
+          pixField('54', Number(valor).toFixed(2)) +
+          pixField('58', 'BR') +
+          pixField('59', String(nome).substring(0, 25)) +
+          pixField('60', 'PARAJURU') +
+          pixField('62', pixField('05', '***'));
+      }
+
+      function carregarCodigoPix(codigoPix) {
+        if (typeof QRCode !== 'undefined') {
+          new QRCode(document.getElementById('pixQrCode'), {
+            text: codigoPix,
+            width: 150,
+            height: 150,
+            colorDark: '#000000',
+            colorLight: '#ffffff'
+          });
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+        script.onload = () => {
+          new QRCode(document.getElementById('pixQrCode'), {
+            text: codigoPix,
+            width: 150,
+            height: 150,
+            colorDark: '#000000',
+            colorLight: '#ffffff'
+          });
+        };
+        document.head.appendChild(script);
+      }
+
+      const carregarFuncPix = await pb.collection('funcionarios').getOne(fid);
+      const chavePix = carregarFuncPix?.chavePix || '';
+      const codigoPix = gerarCodigoPix(chavePix, totalPagar, func ? func.nome : 'Funcionário');
+      const chavePixLabel = chavePix || 'Não cadastrado';
+
       document.body.insertAdjacentHTML('beforeend', `
         <div id="modalPagFunc" style="position:fixed;inset:0;\
           background:rgba(0,0,0,0.7);display:flex;align-items:center;\
@@ -2751,42 +2761,40 @@ if (campoServico) {
               <div style="font-size:16px;font-weight:700;color:#fff;\
                 margin-bottom:4px;">${func ? func.nome : 'Funcionário'}</div>\
               <div style="font-size:12px;color:rgba(255,255,255,0.4);">\
-                Registros pendentes de pagamento\
+                Total a pagar: R$ ${totalPagar.toFixed(2)}\
               </div>\
             </div>\
-            <div style="margin-bottom:16px;">${diasHTML}</div>\
             <div style="background:rgba(0,230,200,0.06);\
               border:1px solid rgba(0,230,200,0.2);\
               border-radius:12px;padding:16px;margin-bottom:16px;">\
-              <div style="font-size:12px;color:rgba(255,255,255,0.5);">\
-                Total a Pagar:\
-              </div>\
-              <div style="font-size:28px;font-weight:800;color:#00e6c8;">\
-                R$ ${totalPagar.toFixed(2)}\
-              </div>\
+              <div style="font-size:12px;color:rgba(255,255,255,0.5);">Chave PIX</div>\
+              <div style="font-size:14px;color:#fff;margin-top:6px;\
+                background:rgba(255,255,255,0.05);padding:12px;border-radius:10px;\
+                border:1px solid rgba(255,255,255,0.08);">${chavePixLabel}</div>\
             </div>\
-            <div style="margin-bottom:12px;">\
+            <div style="margin-bottom:16px;">\
               <label style="font-size:12px;color:rgba(255,255,255,0.5);\
-                display:block;margin-bottom:6px;">\
-                Chave Pix do Funcionário\
-              </label>\
-              <div style="background:rgba(255,255,255,0.06);\
-                border:1px solid rgba(255,255,255,0.1);\
-                border-radius:10px;padding:12px;font-size:14px;color:#fff;">\
-                ${func ? (func.pix||'Não cadastrado') : '—'}\
-              </div>\
+                display:block;margin-bottom:6px;">Código PIX gerado</label>\
+              <input type="text" id="pixCodeModalInput" readonly\
+                value="${codigoPix}"\
+                style="width:100%;background:rgba(255,255,255,0.03);\
+                  border:1px solid rgba(255,255,255,0.08);border-radius:10px;\
+                  padding:12px;color:#fff;font-size:13px;outline:none;">\
             </div>\
-            <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;">\
-              <div style="flex:1">\
-                <label style="font-size:12px;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px;">Código PIX</label>\
-                <input type="text" id="pixCodeInput" readonly\
-                  value="${pixString}"\
-                  style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;color:#fff;font-size:13px;outline:none;">\
-              </div>\
-              <div style="width:120px;text-align:center">\
-                <div id="pixQrContainer" style="margin-bottom:8px"></div>\
-                <button type="button" onclick="(function(){navigator.clipboard.writeText(document.getElementById('pixCodeInput').value).then(()=>showToast('PIX copiado!','#00e6c8')).catch(()=>showToast('Erro ao copiar','#ff6b6b'))})()" class="btn-primary btn-small" style="padding:8px 10px">Copiar código PIX</button>\
-              </div>\
+            <div id="pixQrCode" style="width:150px;height:150px;margin:0 auto;display:flex;\
+              align-items:center;justify-content:center;background:rgba(255,255,255,0.04);\
+              border:1px solid rgba(255,255,255,0.08);border-radius:12px;\
+              margin-bottom:16px;">\
+            </div>\
+            <div style="display:flex;gap:8px;margin-bottom:20px;">\
+              <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('pixCodeModalInput').value).then(()=>showToast('PIX copiado!','#00e6c8')).catch(()=>showToast('Erro ao copiar','#ff6b6b'))"\
+                class="btn-primary btn-small" style="flex:1;padding:14px 16px;">\
+                Copiar PIX\
+              </button>\
+              <button onclick="document.getElementById('modalPagFunc')?.remove()"\
+                class="btn-secondary" style="padding:14px 16px;border-radius:12px;flex-shrink:0;">\
+                Fechar\
+              </button>\
             </div>\
             <div style="margin-bottom:20px;">\
               <label style="font-size:12px;color:rgba(255,255,255,0.5);\
@@ -2808,30 +2816,13 @@ if (campoServico) {
                   font-size:15px;font-weight:700;cursor:pointer;">\
                 Confirmar Pagamento\
               </button>\
-              <button onclick="document.getElementById('modalPagFunc')?.remove()" class="btn-secondary" style="padding:16px;border-radius:12px;flex-shrink:0">Fechar</button>\
             </div>\
           </div>\
         </div>\
       `);
+
+      carregarCodigoPix(codigoPix);
     }
-      // render QR code (load qrcodejs if needed)
-      (function(){
-        const pix = pixString;
-        function createQR(){
-          const container = document.getElementById('pixQrContainer');
-          if (!container) return;
-          container.innerHTML = '';
-          try {
-            new QRCode(container, { text: pix, width: 90, height: 90 });
-          } catch(e) { console.error('QR error', e); }
-        }
-        if (typeof QRCode === 'undefined') {
-          const s = document.createElement('script');
-          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-          s.onload = createQR;
-          document.head.appendChild(s);
-        } else createQR();
-      })();
 
     async function confirmarPagamentoFuncionario(ids) {
       const codigo = document.getElementById('codigoPagFuncInput')?.value?.trim();
