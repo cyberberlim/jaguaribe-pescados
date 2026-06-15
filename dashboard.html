@@ -458,6 +458,19 @@
        Pescados
       </div>
      </div>
+      <div id="confirmLancarDespesasModal" class="modal-overlay hidden" onclick="closeModal(event, 'confirmLancarDespesasModal')">
+       <div class="glass rounded-xl p-6 max-w-md w-full mx-4 fade-in" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-4">
+        <h3 class="font-heading text-xl font-bold">Confirmar Lançamento</h3>
+        <button onclick="closeModal(null, 'confirmLancarDespesasModal')" style="background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer"> <i data-lucide="x" style="width:20px;height:20px"></i> </button>
+        </div>
+        <p style="color:rgba(255,255,255,0.8);margin-bottom:18px">Deseja lançar todas as despesas no caixa?</p>
+        <div class="flex gap-3">
+        <button type="button" class="btn-secondary flex-1" onclick="closeModal(null, 'confirmLancarDespesasModal')">Cancelar</button>
+        <button type="button" class="btn-primary flex-1" onclick="lancarTodasDespesas()">Confirmar</button>
+        </div>
+       </div>
+      </div>
     </div>
     <nav class="flex-1 p-4 space-y-1 overflow-auto">
      <div class="sidebar-link active" data-page="dashboard" onclick="navigateTo('dashboard')"><i data-lucide="layout-dashboard" style="width:18px;height:18px"></i><span>Dashboard</span>
@@ -709,7 +722,7 @@
           </div>
          </div>
         </div>
-        <div class="mb-6"><button class="btn-primary flex items-center gap-2 mb-4" onclick="openModal('addTransacaoModal')"> <i data-lucide="plus" style="width:18px;height:18px"></i>Nova Transação </button>
+        <div class="mb-6"><div style="display:flex;gap:8px;align-items:center"><button class="btn-primary flex items-center gap-2 mb-4" onclick="openModal('addTransacaoModal')"> <i data-lucide="plus" style="width:18px;height:18px"></i>Nova Transação </button><button class="btn-secondary flex items-center gap-2 mb-4" style="padding:10px 14px;font-size:14px" onclick="openModal('confirmLancarDespesasModal')"><i data-lucide="zap" style="width:18px;height:18px"></i>Lançar Despesas</button></div>
          <div class="glass rounded-xl p-6">
           <div class="overflow-x-auto">
            <table class="w-full text-sm">
@@ -1946,6 +1959,30 @@ if (campoServico) {
       `).join('');
     }
 
+    async function lancarTodasDespesas() {
+      closeModal(null, 'confirmLancarDespesasModal');
+      try {
+        const fixas = (currentData.despesasFixas || []).filter(d => !d.lancado);
+        const vari = (currentData.despesasVariaveis || []).filter(d => !d.lancado);
+        const updates = [];
+        fixas.forEach(d => updates.push(pb.collection('despesasFixas').update(d.id, { lancado: true })));
+        vari.forEach(d => updates.push(pb.collection('despesasVariaveis').update(d.id, { lancado: true })));
+        if (updates.length === 0) {
+          showToast('Nenhuma despesa a lançar.', '#ffc837');
+          return;
+        }
+        await Promise.all(updates);
+        await reloadCollection('despesasFixas');
+        await reloadCollection('despesasVariaveis');
+        try { renderDespesasFixas(); } catch(e) {}
+        try { renderDespesasVariaveis(); } catch(e) {}
+        showToast('Despesas lançadas com sucesso!', '#00e6c8');
+      } catch (err) {
+        console.error('Erro ao lançar despesas:', err);
+        showToast('Erro ao lançar despesas!', '#ff6b6b');
+      }
+    }
+
     function renderEstoque() {
       const tbody = document.getElementById('estoqueList');
       if (currentData.estoque.length === 0) {
@@ -1981,7 +2018,31 @@ if (campoServico) {
       if (isNaN(d.getTime())) return dataStr;
       return d.toLocaleDateString('pt-BR');
     }
+    
+    function parseDateLocal(dateStr) {
+      if (!dateStr) return null;
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
 
+    function gerarPix(chave, valor, nome) {
+      function f(id, value) {
+        return id + 
+        value.length.toString().padStart(2,'0') 
+        + value;
+      }
+      const mai = f('00','br.gov.bcb.pix') + 
+                   f('01', chave);
+      return f('00','01') +
+        f('26', mai) +
+        f('52','0000') +
+        f('53','986') +
+        f('54', valor.toFixed(2)) +
+        f('58','BR') +
+        f('59', nome.substring(0,25)) +
+        f('60','PARAJURU') +
+        f('62', f('05','***'));
+    }
     function formatarDataPDF(dataStr) {
       if (!dataStr) return 'Sem data';
       const data = dataStr instanceof Date ? dataStr : new Date(dataStr);
@@ -2568,7 +2629,7 @@ if (campoServico) {
         peso: quantidade,
         valor: valor,
         codigo_pagamento: codigo,
-        data_producao: dataProducao + 'T12:00:00.000Z'
+        data_producao: parseDateLocal(dataProducao) ? parseDateLocal(dataProducao).toISOString() : null
       };
 
       pb.collection('producao').update(id, dadosAtualizados)
@@ -2668,6 +2729,7 @@ if (campoServico) {
       }).join('');
 
       const ids = registros.map(p => p.id);
+      const pixString = gerarPix(func ? (func.pix||'') : '', totalPagar, func ? func.nome : '');
       document.body.insertAdjacentHTML('beforeend', `
         <div id="modalPagFunc" style="position:fixed;inset:0;\
           background:rgba(0,0,0,0.7);display:flex;align-items:center;\
@@ -2714,6 +2776,18 @@ if (campoServico) {
                 ${func ? (func.pix||'Não cadastrado') : '—'}\
               </div>\
             </div>\
+            <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;">\
+              <div style="flex:1">\
+                <label style="font-size:12px;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px;">Código PIX</label>\
+                <input type="text" id="pixCodeInput" readonly\
+                  value="${pixString}"\
+                  style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;color:#fff;font-size:13px;outline:none;">\
+              </div>\
+              <div style="width:120px;text-align:center">\
+                <div id="pixQrContainer" style="margin-bottom:8px"></div>\
+                <button type="button" onclick="(function(){navigator.clipboard.writeText(document.getElementById('pixCodeInput').value).then(()=>showToast('PIX copiado!','#00e6c8')).catch(()=>showToast('Erro ao copiar','#ff6b6b'))})()" class="btn-primary btn-small" style="padding:8px 10px">Copiar código PIX</button>\
+              </div>\
+            </div>\
             <div style="margin-bottom:20px;">\
               <label style="font-size:12px;color:rgba(255,255,255,0.5);\
                 display:block;margin-bottom:6px;">\
@@ -2726,17 +2800,38 @@ if (campoServico) {
                   border-radius:10px;padding:12px;color:#fff;\
                   font-size:14px;outline:none;">\
             </div>\
-            <button onclick="confirmarPagamentoFuncionario(${JSON.stringify(ids)})"\
-              style="width:100%;padding:16px;\
-                background:linear-gradient(135deg,#00e6c8,#00b89e);\
-                color:#0a1628;border:none;border-radius:12px;\
-                font-size:15px;font-weight:700;cursor:pointer;">\
-              Confirmar Pagamento\
-            </button>\
+            <div style="display:flex;gap:8px">\
+              <button onclick="confirmarPagamentoFuncionario(${JSON.stringify(ids)})"\
+                style="flex:1;width:100%;padding:16px;\
+                  background:linear-gradient(135deg,#00e6c8,#00b89e);\
+                  color:#0a1628;border:none;border-radius:12px;\
+                  font-size:15px;font-weight:700;cursor:pointer;">\
+                Confirmar Pagamento\
+              </button>\
+              <button onclick="document.getElementById('modalPagFunc')?.remove()" class="btn-secondary" style="padding:16px;border-radius:12px;flex-shrink:0">Fechar</button>\
+            </div>\
           </div>\
         </div>\
       `);
     }
+      // render QR code (load qrcodejs if needed)
+      (function(){
+        const pix = pixString;
+        function createQR(){
+          const container = document.getElementById('pixQrContainer');
+          if (!container) return;
+          container.innerHTML = '';
+          try {
+            new QRCode(container, { text: pix, width: 90, height: 90 });
+          } catch(e) { console.error('QR error', e); }
+        }
+        if (typeof QRCode === 'undefined') {
+          const s = document.createElement('script');
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+          s.onload = createQR;
+          document.head.appendChild(s);
+        } else createQR();
+      })();
 
     async function confirmarPagamentoFuncionario(ids) {
       const codigo = document.getElementById('codigoPagFuncInput')?.value?.trim();
@@ -2971,7 +3066,7 @@ if (campoServico) {
         descricao: descricao,
         tipo_transacao: tipo,
         valor_transacao: valor,
-        data_transacao: data
+        data_transacao: parseDateLocal(data) ? parseDateLocal(data).toISOString() : null
       };
 
       await saveRecord({
@@ -3003,7 +3098,7 @@ if (campoServico) {
         tipo_lote: nome,
         gramatura: gramatura,
         peso: peso,
-        data_lote: data,
+        data_lote: parseDateLocal(data) ? parseDateLocal(data).toISOString() : null,
         status: 'ativo'
       };
 
@@ -3063,7 +3158,7 @@ if (campoServico) {
           lote_id: loteId,
           peso_antes: peso,
           peso_depois: 0,
-          data_processamento: data || new Date().toISOString()
+          data_processamento: parseDateLocal(data) ? parseDateLocal(data).toISOString() : new Date().toISOString()
         });
 
         await pb.collection('estoque').update(loteId, {
@@ -3235,7 +3330,7 @@ if (campoServico) {
 
       const nomeServico = servicoEl.options[servicoEl.selectedIndex]?.text || servico;
       const nomeTurno = turnoEl.options[turnoEl.selectedIndex]?.text || turno;
-      const dataFormatada = new Date(data + 'T12:00:00').toLocaleDateString('pt-BR');
+      const dataFormatada = parseDateLocal(data) ? parseDateLocal(data).toLocaleDateString('pt-BR') : '';
 
       const status = document.getElementById('globalStatus');
       if (status) {
@@ -3277,7 +3372,7 @@ if (campoServico) {
         peso: quantidade,
         valor: valor,
         codigo_pagamento: '',
-        data_producao: dataProducao + 'T12:00:00.000Z'
+        data_producao: parseDateLocal(dataProducao) ? parseDateLocal(dataProducao).toISOString() : null
       };
 
       await saveRecord({
