@@ -954,8 +954,8 @@
               <label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px;">Serviço</label>
               <select id="globalServico" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;color:#fff;font-size:13px;outline:none;">
                 <option value="">Selecione...</option>
-                <option value="descabecamento" data-preco="0.75">Descabeçamento (R$0,75)</option>
-               <option value="descabecamento" data-preco="0.50">Descabeçamento (R$0,50)</option>
+                <option value="descabecamento-075" data-service="descabeçamento" data-preco="0.75">Descabeçamento (R$0,75)</option>
+               <option value="descabecamento-050" data-service="descabeçamento" data-preco="0.50">Descabeçamento (R$0,50)</option>
                 <option value="file" data-preco="1.50">Filé (R$1,50)</option>
                 <option value="file_evicerado" data-preco="2.50">Filé Evicerado (R$2,50)</option>
                 <option value="eviceramento" data-preco="1.00">Eviceramento (R$1,00)</option>
@@ -965,8 +965,8 @@
                 <option value="empacotamento" data-preco="0.25">Empacotamento (R$0,25)</option>
                 <option value="tail-on" data-preco="2.50">Tail-on (R$2,50)</option>
                 <option value="tail-on-300" data-preco="3.00">Tail-on (R$3,00)</option>
-                <option value="ppv" data-preco="2.75">Ppv (R$2,75)</option>
-                <option value="ppv" data-preco="2.50">Ppv (R$2,50)</option>
+                <option value="ppv-275" data-service="PPV" data-preco="2.75">PPV (R$2,75)</option>
+                <option value="ppv-250" data-service="PPV" data-preco="2.50">PPV (R$2,50)</option>
               </select>
             </div>
             <button onclick="aplicarConfiguracaoGlobal()" style="background:linear-gradient(135deg,#00e6c8,#00b89e);color:#0a1628;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">Aplicar a Todos</button>
@@ -1188,8 +1188,8 @@
     border-radius:10px;padding:12px;color:#fff;
     font-size:14px;outline:none;">
   <option value="">Selecione o serviço</option>
-  <option value="descabecamento" data-preco="0.75">Descabeçamento (R$ 0,75/kg)</option>
-  <option value="descabecamento" data-preco="0.50">Descabeçamento (R$ 0,50/kg)</option>
+  <option value="descabecamento-075" data-service="descabeçamento" data-preco="0.75">Descabeçamento (R$ 0,75/kg)</option>
+  <option value="descabecamento-050" data-service="descabeçamento" data-preco="0.50">Descabeçamento (R$ 0,50/kg)</option>
   <option value="file" data-preco="1.50">Filé (R$ 1,50/kg)</option>
   <option value="file_evicerado" data-preco="2.50">Filé Evicerado (R$ 2,50/kg)</option>
   <option value="eviceramento" data-preco="1.00">Eviceramento (R$ 1,00/kg)</option>
@@ -1199,8 +1199,8 @@
   <option value="empacotamento" data-preco="0.25">Empacotamento (R$ 0,25/kg)</option>
   <option value="tail-on" data-preco="2.50">Tail-on (R$ 2,50/kg)</option>
   <option value="tail-on-300" data-preco="3.00">Tail-on (R$ 3,00/kg)</option>
-  <option value="ppv" data-preco="2.75">PPV (R$ 2,75/kg)</option>
-  <option value="ppv" data-preco="2.50">PPV (R$ 2,50/kg)</option>
+  <option value="ppv-275" data-service="PPV" data-preco="2.75">PPV (R$ 2,75/kg)</option>
+  <option value="ppv-250" data-service="PPV" data-preco="2.50">PPV (R$ 2,50/kg)</option>
 </select>
       </div>
       <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Período</label> <select id="producPeriodo" required> <option value="manhã">Manhã</option> <option value="tarde">Tarde</option> <option value="noite">Noite</option> </select>
@@ -2581,8 +2581,10 @@ if (campoServico) {
         return;
       }
 
-      const taxa = servico === 'descabeçamento' ? 0.50 : 2.50;
-      const valor = quantidade * taxa;
+      const selectServico = document.getElementById('producServico');
+      const opcaoSelecionada = selectServico.options[selectServico.selectedIndex];
+      const preco = parseFloat(opcaoSelecionada?.dataset?.preco || 0);
+      const valor = quantidade * preco;
 
       const dadosAtualizados = {
         funcionario_id: funcionario,
@@ -3267,6 +3269,45 @@ if (campoServico) {
       }
     }
 
+    function obterNomeServico(servico) {
+      const chave = (servico || '').toString().toLowerCase();
+      if (chave.includes('descabecamento') || chave.includes('descabe')) return 'Descabeçamento';
+      if (chave.includes('file_evicerado')) return 'Filé Evicerado';
+      if (chave.includes('file')) return 'Filé';
+      if (chave.includes('eviceramento')) return 'Eviceramento';
+      if (chave.includes('colinha_evicerada')) return 'Colinha Evicerada';
+      if (chave.includes('colinha')) return 'Colinha';
+      if (chave.includes('embandeijamento')) return 'Embandeijamento';
+      if (chave.includes('empacotamento')) return 'Empacotamento';
+      if (chave.includes('tail-on')) return 'Tail-on';
+      if (chave.includes('ppv')) return 'PPV';
+      return servico || 'N/A';
+    }
+
+    function selecionarServicoPorRegistro(producao) {
+      const selectServico = document.getElementById('producServico');
+      if (!selectServico || !producao) return;
+
+      const valor = parseFloat(producao.valor || 0);
+      const peso = parseFloat(producao.peso || 0);
+      const preco = peso > 0 ? Number((valor / peso).toFixed(2)) : null;
+      const servicoAtual = (producao.servico || '').toString().toLowerCase();
+
+      const opcao = Array.from(selectServico.options).find(opt => {
+        if (opt.value === producao.servico) return true;
+        const optService = (opt.dataset.service || '').toString().toLowerCase();
+        const optPreco = parseFloat(opt.dataset.preco || 0);
+
+        if (preco !== null && optPreco === preco) {
+          if (optService && optService === servicoAtual) return true;
+          if (!optService && opt.value.toLowerCase().includes(servicoAtual)) return true;
+        }
+        return false;
+      });
+
+      if (opcao) selectServico.value = opcao.value;
+    }
+
     function calcularValorProducao() {
       const selectServico = document.getElementById('producServico');
       const inputPeso = document.getElementById('producPeso')
@@ -3630,7 +3671,7 @@ if (campoServico) {
 
       tbody.innerHTML = producao.sort((a, b) => new Date(b.data_producao) - new Date(a.data_producao)).map(p => {
         const func = currentData.funcionarios.find(f => f.id === p.funcionario_id);
-        const servicoNome = p.servico === 'descabeçamento' ? 'Descabeçamento' : 'Filé';
+        const servicoNome = obterNomeServico(p.servico);
         const statusPago = p.codigo_pagamento ? 'Pago' : 'Pendente';
         const badgeClass = p.codigo_pagamento ? 'badge-pago' : 'badge-pendente';
 
@@ -3638,7 +3679,7 @@ if (campoServico) {
           <tr style="border-bottom:1px solid rgba(255,255,255,0.06);hover:background rgba(255,255,255,0.02);">
             <td class="py-3 px-4" style="color:rgba(255,255,255,0.7)">${formatarDataProducao(p.data_producao)}</td>
             <td class="py-3 px-4">${func ? func.nome : 'N/A'}</td>
-            <td class="py-3 px-4">${servicoNome}</td>
+            <td class="py-3 px-4">${obterNomeServico(p.servico)}</td>
             <td class="py-3 px-4 text-center" style="color:#00e6c8;font-weight:600">${p.peso} kg</td>
             <td class="py-3 px-4 text-right" style="font-weight:600">R$ ${p.valor.toFixed(2)}</td>
             <td class="py-3 px-4 text-center"><span class="status-badge ${badgeClass}" style="font-size:11px">${statusPago}</span></td>
@@ -3742,8 +3783,8 @@ if (campoServico) {
       });
 
       // 3. GRÃFICO POR TIPO DE SERVIÃ‡O
-      const descabecamento = producao.filter(p => p.servico === 'descabeçamento').reduce((a, b) => a + b.peso, 0);
-      const file = producao.filter(p => p.servico === 'filé').reduce((a, b) => a + b.peso, 0);
+      const descabecamento = producao.filter(p => obterNomeServico(p.servico).toLowerCase().includes('desc')).reduce((a, b) => a + b.peso, 0);
+      const file = producao.filter(p => obterNomeServico(p.servico).toLowerCase().includes('fil')).reduce((a, b) => a + b.peso, 0);
 
       const ctxServicos = document.getElementById('chartRelatorioServicos');
       chartsRelatorios.servicos = new Chart(ctxServicos, {
