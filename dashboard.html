@@ -979,6 +979,7 @@
           <p class="text-sm" style="color:rgba(255,255,255,0.4)">Registro de produção por funcionário</p>
          </div><div style="display:flex;gap:8px;align-items:center;"><button class="btn-primary flex items-center gap-2" onclick="openModal('addProducaoModal')"> <i data-lucide="plus" style="width:18px;height:18px"></i>Registrar </button>
          <button onclick="exportarDossieProducao()" style="background:rgba(0,230,200,0.1);border:1px solid rgba(0,230,200,0.3);border-radius:10px;padding:10px 18px;color:#00e6c8;font-size:13px;font-weight:600;cursor:pointer;">↓ Dossiê PDF</button>
+         <button onclick="corrigirProducaoDia5()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 18px;color:#ffd966;font-size:13px;font-weight:600;cursor:pointer;">Corrigir dia 5</button>
          <button onclick="limparProducaoView()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 18px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Limpar Produção</button></div>
         </div>
         <div style="margin-bottom:20px;">
@@ -3327,6 +3328,63 @@ if (campoServico) {
 
     function atualizarValorProducao() {
       calcularValorProducao();
+    }
+
+    async function corrigirProducaoDia5() {
+      if (!confirm('Deseja corrigir as produções do dia 5 com valor calculado a R$ 2,75 para R$ 2,50?')) {
+        return;
+      }
+
+      const registros = (currentData.producao || []).filter(p => {
+        if (!p.data_producao || !p.peso) return false;
+        const data = new Date(p.data_producao);
+        if (isNaN(data.getTime()) || data.getDate() !== 5) return false;
+        const servico = (p.servico || '').toString().toLowerCase();
+        if (!servico.includes('ppv')) return false;
+        const peso = parseFloat(p.peso || 0);
+        const valor = parseFloat(p.valor || 0);
+        if (peso <= 0) return false;
+        const precoAtual = Number((valor / peso).toFixed(2));
+        return precoAtual === 2.75;
+      });
+
+      if (!registros.length) {
+        showToast('Nenhum registro do dia 5 com preço R$ 2,75 encontrado.', '#ffc837');
+        return;
+      }
+
+      try {
+        const atualizacoes = registros.map(async registro => {
+          const peso = parseFloat(registro.peso || 0);
+          const novoValor = Number((peso * 2.50).toFixed(2));
+          const dadosAtualizados = {
+            servico: registro.servico && registro.servico.toString().toLowerCase().includes('ppv-275') ? 'ppv-250' : registro.servico,
+            valor: novoValor
+          };
+          const atualizado = await pb.collection('producao').update(registro.id, dadosAtualizados);
+          return { id: registro.id, valor: atualizado.valor, servico: atualizado.servico };
+        });
+
+        const resultados = await Promise.all(atualizacoes);
+        resultados.forEach(item => {
+          const index = currentData.producao.findIndex(p => p.id === item.id);
+          if (index !== -1) {
+            currentData.producao[index] = {
+              ...currentData.producao[index],
+              valor: item.valor,
+              servico: item.servico
+            };
+          }
+        });
+
+        renderProducao();
+        updateDashboard();
+        try { initCharts(); } catch (e) { console.error('Charts init:', e); }
+        showToast(`${resultados.length} produção(ções) do dia 5 corrigida(s) para R$ 2,50.`, '#00e6c8');
+      } catch (error) {
+        console.error('Erro ao corrigir produções do dia 5:', error);
+        showToast('Erro ao corrigir as produções do dia 5.', '#ff6b6b');
+      }
     }
 
     function formatarDataProducao(dataStr) {
