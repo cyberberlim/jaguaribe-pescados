@@ -977,7 +977,7 @@
          <div>
           <h2 class="font-heading text-2xl font-bold">Produção</h2>
           <p class="text-sm" style="color:rgba(255,255,255,0.4)">Registro de produção por funcionário</p>
-         </div><div style="display:flex;gap:8px;align-items:center;"><button class="btn-primary flex items-center gap-2" onclick="openModal('addProducaoModal')"> <i data-lucide="plus" style="width:18px;height:18px"></i>Registrar </button>
+         </div><div style="display:flex;gap:8px;align-items:center;"><button class="btn-primary flex items-center gap-2" onclick="openProducaoEmMassaModal()"> <i data-lucide="plus" style="width:18px;height:18px"></i>Registrar </button>
          <button onclick="exportarDossieProducao()" style="background:rgba(0,230,200,0.1);border:1px solid rgba(0,230,200,0.3);border-radius:10px;padding:10px 18px;color:#00e6c8;font-size:13px;font-weight:600;cursor:pointer;">↓ Dossiê PDF</button>
          <button onclick="corrigirProducaoDia5()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 18px;color:#ffd966;font-size:13px;font-weight:600;cursor:pointer;">Corrigir dia 5</button>
          <button onclick="limparProducaoView()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 18px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Limpar Produção</button></div>
@@ -1228,7 +1228,53 @@
       </div>
      </form>
     </div>
-   </div><!-- ADD DESPESA FIXA MODAL -->
+   </div>
+   <div id="addProducaoEmMassaModal" class="modal-overlay hidden" onclick="closeModal(event, 'addProducaoEmMassaModal')">
+    <div class="glass rounded-xl p-8 max-w-4xl w-full mx-4 fade-in" onclick="event.stopPropagation()">
+     <div class="flex items-center justify-between mb-6">
+      <h3 class="font-heading text-xl font-bold">Registrar Produção em Massa</h3><button onclick="closeModal(null, 'addProducaoEmMassaModal')" style="background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer"> <i data-lucide="x" style="width:20px;height:20px"></i> </button>
+     </div>
+     <form onsubmit="salvarProducaoEmMassa(event)">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">
+       <div>
+        <label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Data</label>
+        <input type="date" id="bulkProducaoData" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;color:#fff;font-size:13px;outline:none;">
+       </div>
+       <div>
+        <label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Turno</label>
+        <select id="bulkProducaoPeriodo" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;color:#fff;font-size:13px;outline:none;">
+         <option value="manhã">Manhã</option>
+         <option value="tarde">Tarde</option>
+         <option value="noite">Noite</option>
+        </select>
+       </div>
+       <div>
+        <label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Serviço</label>
+        <select id="bulkProducaoServico" onchange="atualizarValoresEmMassa()" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;color:#fff;font-size:13px;outline:none;">
+         <option value="">Selecione um serviço</option>
+         <option value="descabecamento-075" data-preco="0.75">Descabeçamento (R$ 0,75/kg)</option>
+         <option value="descabecamento-050" data-preco="0.50">Descabeçamento (R$ 0,50/kg)</option>
+         <option value="file" data-preco="1.50">Filé (R$ 1,50/kg)</option>
+         <option value="file_evicerado" data-preco="2.50">Filé Evicerado (R$ 2,50/kg)</option>
+         <option value="eviceramento" data-preco="1.00">Eviceramento (R$ 1,00/kg)</option>
+         <option value="colinha_evicerada" data-preco="2.50">Colinha Evicerada (R$ 2,50/kg)</option>
+         <option value="colinha" data-preco="1.50">Colinha (R$ 1,50/kg)</option>
+         <option value="embandeijamento" data-preco="0.50">Embandeijamento (R$ 0,50/kg)</option>
+         <option value="empacotamento" data-preco="0.25">Empacotamento (R$ 0,25/kg)</option>
+         <option value="tail-on" data-preco="2.50">Tail-on (R$ 2,50/kg)</option>
+         <option value="tail-on-300" data-preco="3.00">Tail-on (R$ 3,00/kg)</option>
+         <option value="ppv-275" data-preco="2.75">PPV (R$ 2,75/kg)</option>
+         <option value="ppv-250" data-preco="2.50">PPV (R$ 2,50/kg)</option>
+        </select>
+       </div>
+      </div>
+      <div style="color:rgba(255,255,255,0.65);font-size:13px;margin-bottom:16px;">Deixe o peso em branco para funcionários que faltaram. Apenas registros com peso serão salvos.</div>
+      <div id="bulkProducaoRowsContainer" style="max-height:420px;overflow:auto;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;background:rgba(255,255,255,0.03);"></div>
+      <div class="flex gap-3 mt-4"><button type="button" class="btn-secondary flex-1" onclick="closeModal(null, 'addProducaoEmMassaModal')">Cancelar</button> <button type="submit" class="btn-primary flex-1">Registrar Produções</button>
+      </div>
+     </form>
+    </div>
+   </div>
    <div id="addDespesaFixaModal" class="modal-overlay hidden" onclick="closeModal(event, 'addDespesaFixaModal')">
     <div class="glass rounded-xl p-8 max-w-md w-full mx-4 fade-in" onclick="event.stopPropagation()">
      <div class="flex items-center justify-between mb-6">
@@ -1334,6 +1380,12 @@
         despesasVariaveis: [],
         configuracoes: {}
       };
+    }
+
+    function obterFuncionariosOrdenados() {
+      return [...(currentData.funcionarios || [])].sort((a, b) =>
+        (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' })
+      );
     }
 
     function renderAll() {
@@ -1703,32 +1755,186 @@
     function openModal(id) {
       const modal = document.getElementById(id);
       if (modal) {
+        if (id === 'addProducaoModal' && !editandoId) {
+          resetProducaoModal();
+        }
         modal.classList.remove('hidden');
         if (typeof lucide !== 'undefined') lucide.createIcons();
         // Preencher modal de produção com configuração global, se houver (robusto)
-        if (id === 'addProducaoModal') {
+        if (id === 'addProducaoModal' && !editandoId) {
           setTimeout(() => {
             if (window.globalProducao) {
               const g = window.globalProducao;
 
               // Preenche data // turno // serviço
               const campoData = document.getElementById('producData');
-if (campoData) campoData.value = g.data;
+              if (campoData) campoData.value = g.data;
 
-const campoTurno = document.getElementById('producPeriodo');
-if (campoTurno) {
-  campoTurno.value = g.turno;
-  campoTurno.dispatchEvent(new Event('change'));
-}
+              const campoTurno = document.getElementById('producPeriodo');
+              if (campoTurno) {
+                campoTurno.value = g.turno;
+                campoTurno.dispatchEvent(new Event('change'));
+              }
 
-const campoServico = document.getElementById('producServico');
-if (campoServico) {
-  campoServico.value = g.servico;
-  campoServico.dispatchEvent(new Event('change'));
+              const campoServico = document.getElementById('producServico');
+              if (campoServico) {
+                campoServico.value = g.servico;
+                campoServico.dispatchEvent(new Event('change'));
               }
             }
           }, 100);
         }
+      }
+    }
+
+    function openProducaoEmMassaModal() {
+      const dataField = document.getElementById('bulkProducaoData');
+      const periodoField = document.getElementById('bulkProducaoPeriodo');
+      const servicoField = document.getElementById('bulkProducaoServico');
+      const rowsContainer = document.getElementById('bulkProducaoRowsContainer');
+
+      if (servicoField) {
+        servicoField.onchange = atualizarValoresEmMassa;
+      }
+
+      if (window.globalProducao) {
+        const g = window.globalProducao;
+        if (dataField) dataField.value = g.data || '';
+        if (periodoField) periodoField.value = g.turno || 'manhã';
+        if (servicoField) {
+          servicoField.value = g.servico || '';
+          servicoField.dispatchEvent(new Event('change'));
+        }
+      }
+
+      if (!rowsContainer) return;
+      const funcionarios = obterFuncionariosOrdenados();
+      if (funcionarios.length === 0) {
+        rowsContainer.innerHTML = '<div style="color:#ffb86c;padding:16px;border-radius:10px;background:rgba(255,255,255,0.05);">Nenhum funcionário encontrado. Cadastre ao menos um funcionário antes de registrar produção em massa.</div>';
+      } else {
+        rowsContainer.innerHTML = funcionarios.map(funcionario => {
+          const cargoTexto = funcionario.cargo === 'fixo' ? 'Fixo' : 'Produtor';
+          return `
+            <div data-bulk-row data-funcionario-id="${funcionario.id}" style="display:grid;grid-template-columns:1fr 220px;gap:12px;align-items:center;margin-bottom:10px;padding:10px;border-bottom:1px solid rgba(255,255,255,0.08);">
+              <div style="color:#fff;font-size:14px;line-height:1.4;">
+                <strong>${funcionario.nome}</strong><br>
+                <span style="color:rgba(255,255,255,0.55);font-size:12px;">${cargoTexto}</span>
+              </div>
+              <div style="display:grid;gap:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                  <div style="flex:1;">
+                    <label style="color:rgba(255,255,255,0.7);font-size:12px;font-weight:500;margin-bottom:4px;display:block;">Peso (kg)</label>
+                    <input type="number" min="0" step="0.01" name="bulkPeso" data-funcionario-id="${funcionario.id}" placeholder="0.00" oninput="atualizarValorLinhaEmMassa(this)" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;color:#fff;font-size:13px;outline:none;" />
+                  </div>
+                  <div style="min-width:120px;">
+                    <label style="color:rgba(255,255,255,0.7);font-size:12px;font-weight:500;margin-bottom:4px;display:block;">Valor</label>
+                    <div class="bulk-valor" style="padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:#00e6c8;font-size:13px;font-weight:700;">R$ 0.00</div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      openModal('addProducaoEmMassaModal');
+    }
+
+    function getPrecoServicoBulk() {
+      const servicoSelect = document.getElementById('bulkProducaoServico');
+      const servicoOpcao = servicoSelect?.options[servicoSelect.selectedIndex];
+      return parseFloat(servicoOpcao?.dataset?.preco || 0);
+    }
+
+    function atualizarValorLinhaEmMassa(input) {
+      const row = input.closest('[data-bulk-row]');
+      const valorEl = row?.querySelector('.bulk-valor');
+      const preco = getPrecoServicoBulk();
+      const peso = parseFloat(input.value.replace(',', '.')) || 0;
+      if (valorEl) {
+        valorEl.textContent = `R$ ${ (peso > 0 ? (peso * preco).toFixed(2) : '0.00') }`;
+      }
+    }
+
+    function atualizarValoresEmMassa() {
+      const inputs = Array.from(document.querySelectorAll('#bulkProducaoRowsContainer input[name="bulkPeso"]'));
+      inputs.forEach(atualizarValorLinhaEmMassa);
+    }
+
+    async function salvarProducaoEmMassa(event) {
+      event.preventDefault();
+
+      const dataProducao = document.getElementById('bulkProducaoData')?.value;
+      const turno = document.getElementById('bulkProducaoPeriodo')?.value;
+      const servicoSelect = document.getElementById('bulkProducaoServico');
+      const servico = servicoSelect?.value;
+      const servicoOpcao = servicoSelect?.options[servicoSelect.selectedIndex];
+      const preco = parseFloat(servicoOpcao?.dataset?.preco || 0);
+
+      if (!dataProducao || !turno || !servico) {
+        showToast('Preencha data, turno e serviço antes de registrar.', '#ff6b6b');
+        return;
+      }
+
+      const rows = Array.from(document.querySelectorAll('#bulkProducaoRowsContainer [data-bulk-row]'));
+      const registros = rows.map(row => {
+        const input = row.querySelector('input[name="bulkPeso"]');
+        if (!input) return null;
+
+        const peso = parseFloat(input.value.replace(',', '.'));
+        if (isNaN(peso) || peso <= 0) return null;
+
+        return {
+          funcionario_id: row.dataset.funcionarioId || input.dataset.funcionarioId,
+          servico: servico,
+          periodo: turno,
+          peso: peso,
+          valor: parseFloat((peso * preco).toFixed(2)),
+          codigo_pagamento: '',
+          data_producao: parseDateLocal(dataProducao) ? parseDateLocal(dataProducao).toISOString() : null
+        };
+      }).filter(Boolean);
+
+      if (registros.length === 0) {
+        showToast('Nenhum peso válido foi informado. Preencha pelo menos um peso para continuar.', '#ff6b6b');
+        return;
+      }
+
+      try {
+        const falhas = [];
+        let salvas = 0;
+
+        for (const registro of registros) {
+          try {
+            await pb.collection('producao').create(registro);
+            salvas += 1;
+          } catch (error) {
+            falhas.push({ registro, reason: error });
+          }
+        }
+
+        if (falhas.length > 0) {
+          console.error('Falhas ao registrar algumas produções em massa:', falhas.map(f => f.reason));
+        }
+
+        if (salvas > 0) {
+          await reloadCollection('producao');
+          renderProducao();
+          updateDashboard();
+          setTimeout(() => {
+            try { initCharts(); } catch (err) { console.error('Charts:', err); }
+          }, 300);
+          closeModal(null, 'addProducaoEmMassaModal');
+          if (falhas.length > 0) {
+            showToast(`✓ ${salvas} produção(ções) registradas com sucesso. ${falhas.length} falharam.`, '#ffc837');
+          } else {
+            showToast(`✓ ${salvas} produção(ções) registradas com sucesso!`, '#00e6c8');
+          }
+        } else {
+          showToast('Erro ao registrar produções em massa!', '#ff6b6b');
+        }
+      } catch (error) {
+        console.error('Erro ao registrar produções em massa:', error);
+        showToast('Erro ao registrar produções em massa!', '#ff6b6b');
       }
     }
 
@@ -1750,22 +1956,48 @@ if (campoServico) {
       document.querySelectorAll('.modal-overlay').forEach(modal => modal.classList.add('hidden'));
     }
 
+    function resetProducaoModal() {
+      const modal = document.getElementById('addProducaoModal');
+      if (!modal) return;
+      const form = modal.querySelector('form');
+      if (form) form.reset();
+      const titulo = modal.querySelector('h3');
+      if (titulo) titulo.textContent = 'Registrar Produção';
+      const submitBtn = modal.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.textContent = 'Registrar';
+      editandoId = null;
+    }
+
     function closeModal(e, id) {
       const modal = document.getElementById(id);
       if (!modal) return;
       if (e && e.target !== modal) return;
       modal.classList.add('hidden');
+      // Reset form fields inside modal when closing
+      try {
+        const form = modal.querySelector('form');
+        if (form) form.reset();
+      } catch (err) {
+        console.warn('Erro ao resetar form do modal:', err);
+      }
       
       // Limpar editandoId e restaurar títulos
-      editandoId = null;
       const titulos = {
         'addClientModal': 'Novo Cliente',
         'addFuncionarioModal': 'Novo Funcionário', 
-        'addEstoqueModal': 'Novo Lote'
+        'addEstoqueModal': 'Novo Lote',
+        'addProducaoModal': 'Registrar Produção',
+        'addDespesaFixaModal': 'Nova Despesa Fixa',
+        'addDespesaVariavelModal': 'Nova Despesa Variável'
       };
       if (titulos[id]) {
         const titulo = modal.querySelector('h3');
         if (titulo) titulo.textContent = titulos[id];
+      }
+      if (id === 'addProducaoModal') {
+        resetProducaoModal();
+      } else {
+        editandoId = null;
       }
     }
 
@@ -1847,7 +2079,7 @@ if (campoServico) {
                            }
     function renderFuncionarios() {
       const container = document.getElementById('funcionariosList');
-      const funcionarios = currentData.funcionarios;
+      const funcionarios = obterFuncionariosOrdenados();
       if (funcionarios.length === 0) {
         container.innerHTML = '';
         document.getElementById('funcionariosEmpty').style.display = 'block';
@@ -2547,7 +2779,8 @@ if (campoServico) {
         return;
       }
 
-      // Preencher o modal de adicionar produção com os dados atuais
+      editandoId = id;
+
       document.getElementById('producFuncionario').value = producao.funcionario_id || '';
       document.getElementById('producServico').value = producao.servico || '';
       document.getElementById('producPeriodo').value = producao.periodo || '';
@@ -2556,72 +2789,13 @@ if (campoServico) {
         new Date(producao.data_producao).toISOString().split('T')[0] : '';
       document.getElementById('producCodigo').value = producao.codigo_pagamento || '';
 
-      // Atualizar valor calculado
       atualizarValorProducao();
 
-      // Mudar o título e o botão do modal
       document.querySelector('#addProducaoModal h3').textContent = 'Editar Produção';
       const submitBtn = document.querySelector('#addProducaoModal button[type="submit"]');
-      submitBtn.textContent = 'Salvar Alterações';
-      submitBtn.onclick = () => salvarEdicaoProducao(id);
+      if (submitBtn) submitBtn.textContent = 'Salvar Alterações';
 
-      // Abrir modal
       openModal('addProducaoModal');
-    }
-
-    function salvarEdicaoProducao(id) {
-      const funcionario = document.getElementById('producFuncionario').value;
-      const turno = document.getElementById('producPeriodo').value;
-      const dataProducao = document.getElementById('producData').value;
-      const servico = document.getElementById('producServico').value;
-      const quantidade = parseFloat(document.getElementById('producPeso').value);
-      const codigo = document.getElementById('producCodigo').value.trim();
-
-      if (!funcionario || !turno || !dataProducao || !servico || isNaN(quantidade) || quantidade <= 0) {
-        showToast('Preencha os dados corretamente!', '#ff6b6b');
-        return;
-      }
-
-      const selectServico = document.getElementById('producServico');
-      const opcaoSelecionada = selectServico.options[selectServico.selectedIndex];
-      const preco = parseFloat(opcaoSelecionada?.dataset?.preco || 0);
-      const valor = quantidade * preco;
-
-      const dadosAtualizados = {
-        funcionario_id: funcionario,
-        servico: servico,
-        periodo: turno,
-        peso: quantidade,
-        valor: valor,
-        codigo_pagamento: codigo,
-        data_producao: parseDateLocal(dataProducao) ? parseDateLocal(dataProducao).toISOString() : null
-      };
-
-      pb.collection('producao').update(id, dadosAtualizados)
-        .then(() => {
-          // Atualizar localmente
-          const index = currentData.producao.findIndex(p => p.id === id);
-          if (index !== -1) {
-            currentData.producao[index] = { ...currentData.producao[index], ...dadosAtualizados };
-          }
-          closeModal(null, 'addProducaoModal');
-          renderProducao();
-          updateDashboard();
-          setTimeout(() => {
-            try { initCharts(); } catch(e) { console.error('Charts:', e); }
-          }, 300);
-          showToast('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-right:6px;"><polyline points="20,6 9,17 4,12"/></svg> Produção atualizada!', '#00e6c8');
-
-          // Resetar modal
-          document.querySelector('#addProducaoModal h3').textContent = 'Registrar Produção';
-          const submitBtn = document.querySelector('#addProducaoModal button[type="submit"]');
-          submitBtn.textContent = 'Registrar';
-          submitBtn.onclick = salvarProducao;
-        })
-        .catch(error => {
-          console.error('Erro ao atualizar produção:', error);
-          showToast('Erro ao atualizar produção!', '#ff6b6b');
-        });
     }
 
     function apagarProducaoFuncionario(fid) {
@@ -3439,6 +3613,7 @@ if (campoServico) {
       const dataProducao = document.getElementById('producData').value;
       const servico = document.getElementById('producServico').value;
       const quantidade = parseFloat(document.getElementById('producPeso').value);
+      const codigo = document.getElementById('producCodigo').value.trim();
       
       if (!funcionario || !turno || !dataProducao || !servico || isNaN(quantidade) || quantidade <= 0) {
         showToast('Preencha os dados corretamente!', '#ff6b6b');
@@ -3448,11 +3623,8 @@ if (campoServico) {
       const selectServico = document.getElementById('producServico');
       const opcao = selectServico.options[selectServico.selectedIndex];
       const preco = parseFloat(opcao?.dataset?.preco || 0);
-      const peso = parseFloat(document.getElementById('producPeso')?.value 
-        || document.getElementById('producQuantidade')?.value || 0);
-      const valor = parseFloat(document.getElementById('producValor')?.value 
-        || (preco * peso).toFixed(2));
-      const servicoValor = selectServico.value;
+      const peso = parseFloat(document.getElementById('producPeso')?.value || 0);
+      const valor = parseFloat(document.getElementById('producValor')?.value || (preco * peso).toFixed(2));
       
       const novo = {
         funcionario_id: funcionario,
@@ -3460,20 +3632,40 @@ if (campoServico) {
         periodo: turno,
         peso: quantidade,
         valor: valor,
-        codigo_pagamento: '',
+        codigo_pagamento: codigo,
         data_producao: parseDateLocal(dataProducao) ? parseDateLocal(dataProducao).toISOString() : null
       };
 
-      await saveRecord({
-        colecao: 'producao',
-        dados: novo,
-        modalId: 'addProducaoModal',
-        formSelector: '#addProducaoModal form',
-        renderFn: renderProducao,
-        afterSave: [updateDashboard, initCharts],
-        successMessage: '✓ Produção registrada com sucesso!',
-        errorMessage: 'Erro ao salvar produção!'
-      });
+      try {
+        if (editandoId) {
+          const id = editandoId;
+          await pb.collection('producao').update(id, novo);
+          editandoId = null;
+          await reloadCollection('producao');
+          renderProducao();
+          updateDashboard();
+          setTimeout(() => {
+            try { initCharts(); } catch(e) { console.error('Charts:', e); }
+          }, 300);
+          closeModal(null, 'addProducaoModal');
+          resetProducaoModal();
+          showToast('✓ Produção atualizada!', '#00e6c8');
+        } else {
+          await saveRecord({
+            colecao: 'producao',
+            dados: novo,
+            modalId: 'addProducaoModal',
+            formSelector: '#addProducaoModal form',
+            renderFn: renderProducao,
+            afterSave: [updateDashboard, initCharts],
+            successMessage: '✓ Produção registrada com sucesso!',
+            errorMessage: 'Erro ao salvar produção!'
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao salvar produção:', error);
+        showToast(editandoId ? 'Erro ao atualizar produção!' : 'Erro ao salvar produção!', '#ff6b6b');
+      }
       const producaoValorInput = document.getElementById('producValor');
       if (producaoValorInput) producaoValorInput.value = '0.00';
     }
@@ -3498,21 +3690,37 @@ if (campoServico) {
         return;
       }
       
-      const nova = {
+      const dados = {
         nome_despesa_fixa: nome,
         valor_despesa_fixa: valor
       };
-      
-      await saveRecord({
-        colecao: 'despesasFixas',
-        dados: nova,
-        modalId: 'addDespesaFixaModal',
-        formSelector: '#addDespesaFixaModal form',
-        renderFn: renderDespesasFixas,
-        afterSave: [updateDashboard],
-        successMessage: 'âœ“ Despesa fixa adicionada!',
-        errorMessage: 'Erro ao salvar despesa fixa!'
-      });
+
+      try {
+        if (editandoId) {
+          const id = editandoId;
+          await pb.collection('despesasFixas').update(id, dados);
+          editandoId = null;
+          await reloadCollection('despesasFixas');
+          renderDespesasFixas();
+          updateDashboard();
+          closeModal(null, 'addDespesaFixaModal');
+          showToast('✓ Despesa fixa atualizada!', '#00e6c8');
+        } else {
+          await saveRecord({
+            colecao: 'despesasFixas',
+            dados: dados,
+            modalId: 'addDespesaFixaModal',
+            formSelector: '#addDespesaFixaModal form',
+            renderFn: renderDespesasFixas,
+            afterSave: [updateDashboard],
+            successMessage: '✓ Despesa fixa adicionada!',
+            errorMessage: 'Erro ao salvar despesa fixa!'
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao salvar/despesa fixa:', error);
+        showToast(editandoId ? 'Erro ao atualizar despesa fixa!' : 'Erro ao salvar despesa fixa!', '#ff6b6b');
+      }
     }
 
    async function salvarDespesaVariavel(e) {
@@ -3526,21 +3734,37 @@ if (campoServico) {
         return;
       }
       
-      const nova = {
+      const dados = {
         nome_despesa_fixa: nome,
         valor_despesa_fixa: valor
       };
 
-      await saveRecord({
-        colecao: 'despesasVariaveis',
-        dados: nova,
-        modalId: 'addDespesaVariavelModal',
-        formSelector: '#addDespesaVariavelModal form',
-        renderFn: renderDespesasVariaveis,
-        afterSave: [updateDashboard],
-        successMessage: '✓ Despesa variável adicionada!',
-        errorMessage: 'Erro ao salvar despesa variÃ¡vel!'
-      });
+      try {
+        if (editandoId) {
+          const id = editandoId;
+          await pb.collection('despesasVariaveis').update(id, dados);
+          editandoId = null;
+          await reloadCollection('despesasVariaveis');
+          renderDespesasVariaveis();
+          updateDashboard();
+          closeModal(null, 'addDespesaVariavelModal');
+          showToast('✓ Despesa variável atualizada!', '#00e6c8');
+        } else {
+          await saveRecord({
+            colecao: 'despesasVariaveis',
+            dados: dados,
+            modalId: 'addDespesaVariavelModal',
+            formSelector: '#addDespesaVariavelModal form',
+            renderFn: renderDespesasVariaveis,
+            afterSave: [updateDashboard],
+            successMessage: '✓ Despesa variável adicionada!',
+            errorMessage: 'Erro ao salvar despesa variável!'
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao salvar/despesa variável:', error);
+        showToast(editandoId ? 'Erro ao atualizar despesa variável!' : 'Erro ao salvar despesa variável!', '#ff6b6b');
+      }
     }
 
     function salvarConfiguracoes(e) {
@@ -3591,7 +3815,7 @@ if (campoServico) {
       const select = document.getElementById('producFuncionario');
       if (!select) return;
       
-      const funcionarios = currentData.funcionarios || [];
+      const funcionarios = obterFuncionariosOrdenados();
       
       select.innerHTML = '<option value="">Selecione um funcionário</option>' + 
         funcionarios.map(f => {
@@ -3970,8 +4194,9 @@ if (campoServico) {
       doc.text('Gerado em: ' + formatarDataPDF(new Date().toISOString()), 14, 22);
       doc.autoTable({
         startY: 28,
-        head: [['Nome', 'Cargo', 'Telefone', 'PIX', 'Status']],
+        head: [['ID', 'Nome', 'Cargo', 'Telefone', 'PIX', 'Status']],
         body: currentData.funcionarios.map(f => [
+          f.id || '',
           f.nome || '',
           f.cargo || '',
           f.telefone || '',
@@ -4353,11 +4578,7 @@ if (campoServico) {
       if (titulo) titulo.textContent = 'Editar Cliente';
       
       // Abre o modal
-      const modal = document.getElementById('addClientModal');
-      if (modal) {
-        modal.classList.remove('hidden');
-        modal.style.display = 'flex';
-      }
+      openModal('addClientModal');
     }
 
     function editarFuncionario(id) {
@@ -4378,49 +4599,7 @@ if (campoServico) {
       const titulo = document.querySelector('#addFuncionarioModal h3');
       if (titulo) titulo.textContent = 'Editar Funcionario';
       
-      const modal = document.getElementById('addFuncionarioModal');
-      if (modal) {
-        modal.classList.remove('hidden');
-        modal.style.display = 'flex';
-      }
-    }
-
-    async function editarProducao(id) {
-      const producao = currentData.producao.find(p => p.id === id);
-      if (!producao) {
-        showToast('Produção não encontrada.', '#ff6b6b');
-        return;
-      }
-
-      const funcionario_id = prompt('ID do funcionário', producao.funcionario_id || '');
-      if (funcionario_id === null) return;
-      const servico = prompt('Serviço (descabeçamento / filé)', producao.servico || 'descabeçamento');
-      if (servico === null) return;
-      const periodo = prompt('Período', producao.periodo || 'manhã');
-      if (periodo === null) return;
-      const peso = parseFloat(prompt('Peso (kg)', producao.peso || '0'));
-      if (isNaN(peso)) return;
-      const valor = parseFloat(prompt('Valor (R$)', producao.valor || '0'));
-      if (isNaN(valor)) return;
-      const data_producao = prompt('Data de produção', producao.data_producao ? new Date(producao.data_producao).toISOString().slice(0, 10) : '');
-      if (data_producao === null) return;
-
-      try {
-        await pb.collection('producao').update(id, {
-          funcionario_id: funcionario_id,
-          servico: servico,
-          periodo: periodo,
-          peso: peso,
-          valor: valor,
-          data_producao: data_producao
-        });
-        await loadAll();
-        renderAll();
-        showToast('✓ Produção atualizada!');
-      } catch (error) {
-        console.error('Erro ao atualizar produção:', error);
-        showToast('Erro ao atualizar produção!', '#ff6b6b');
-      }
+      openModal('addFuncionarioModal');
     }
 
     function editarEstoque(id) {
@@ -4441,11 +4620,7 @@ if (campoServico) {
       const titulo = document.querySelector('#addEstoqueModal h3');
       if (titulo) titulo.textContent = 'Editar Lote';
       
-      const modal = document.getElementById('addEstoqueModal');
-      if (modal) {
-        modal.classList.remove('hidden');
-        modal.style.display = 'flex';
-      }
+      openModal('addEstoqueModal');
     }
 
     async function editarDespesaFixa(id) {
@@ -4455,23 +4630,14 @@ if (campoServico) {
         return;
       }
 
-      const nome = prompt('Nome da despesa fixa', despesa.nome_despesa_fixa || '');
-      if (nome === null) return;
-      const valor = parseFloat(prompt('Valor (R$)', despesa.valor_despesa_fixa || '0'));
-      if (isNaN(valor)) return;
+      editandoId = id;
+      const setVal = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val || ''; };
+      setVal('nomeDespesaFixa', despesa.nome_despesa_fixa);
+      setVal('valorDespesaFixa', despesa.valor_despesa_fixa);
 
-      try {
-        await pb.collection('despesasFixas').update(id, {
-          nome_despesa_fixa: nome,
-          valor_despesa_fixa: valor
-        });
-        await loadAll();
-        renderAll();
-        showToast('âœ“ Despesa fixa atualizada!');
-      } catch (error) {
-        console.error('Erro ao atualizar despesa fixa:', error);
-        showToast('Erro ao atualizar despesa fixa!', '#ff6b6b');
-      }
+      const titulo = document.querySelector('#addDespesaFixaModal h3');
+      if (titulo) titulo.textContent = 'Editar Despesa Fixa';
+      openModal('addDespesaFixaModal');
     }
 
     async function editarDespesaVariavel(id) {
@@ -4481,23 +4647,14 @@ if (campoServico) {
         return;
       }
 
-      const nome = prompt('Nome da despesa variável', despesa.nome_despesa_fixa || '');
-      if (nome === null) return;
-      const valor = parseFloat(prompt('Valor (R$)', despesa.valor_despesa_fixa || '0'));
-      if (isNaN(valor)) return;
+      editandoId = id;
+      const setVal = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val || ''; };
+      setVal('nomeDespesaVariavel', despesa.nome_despesa_fixa);
+      setVal('valorDespesaVariavel', despesa.valor_despesa_fixa);
 
-      try {
-        await pb.collection('despesasVariaveis').update(id, {
-          nome_despesa_fixa: nome,
-          valor_despesa_fixa: valor
-        });
-        await loadAll();
-        renderAll();
-        showToast('✓ Despesa variável atualizada!');
-      } catch (error) {
-        console.error('Erro ao atualizar despesa variável:', error);
-        showToast('Erro ao atualizar despesa variável!', '#ff6b6b');
-      }
+      const titulo = document.querySelector('#addDespesaVariavelModal h3');
+      if (titulo) titulo.textContent = 'Editar Despesa Variável';
+      openModal('addDespesaVariavelModal');
     }
 
     function renderDespesasFixas() {
