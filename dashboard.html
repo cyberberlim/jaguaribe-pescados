@@ -420,6 +420,18 @@
       }
     }
 
+    #estoqueList {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 768px) {
+      #estoqueList {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
     .chart-wrapper {
       position: relative;
       height: 220px;
@@ -748,27 +760,12 @@
         <div class="mb-6 flex items-center justify-between">
          <div>
           <h2 class="font-heading text-2xl font-bold">Estoque de Lotes</h2>
-          <p class="text-sm" style="color:rgba(255,255,255,0.4)">Cadastro de lotes de camarão</p>
+          <p class="text-sm" style="color:rgba(255,255,255,0.4)">Cadastro de lotes com múltiplas gramaturas</p>
          </div><button class="btn-primary flex items-center gap-2" onclick="openModal('addEstoqueModal')"> <i data-lucide="plus" style="width:18px;height:18px"></i>Novo Lote </button>
         </div>
-        <div class="glass rounded-xl p-6">
-         <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-           <thead>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
-             <th class="text-left py-3 px-4 font-medium" style="color:rgba(255,255,255,0.5)">Nome do Lote</th>
-             <th class="text-left py-3 px-4 font-medium" style="color:rgba(255,255,255,0.5)">Gramatura</th>
-             <th class="text-left py-3 px-4 font-medium" style="color:rgba(255,255,255,0.5)">Peso (kg)</th>
-             <th class="text-left py-3 px-4 font-medium" style="color:rgba(255,255,255,0.5)">Data</th>
-             <th class="text-center py-3 px-4 font-medium" style="color:rgba(255,255,255,0.5)">Ações</th>
-            </tr>
-           </thead>
-           <tbody id="estoqueList"></tbody>
-          </table>
-         </div>
-         <div id="estoqueEmpty" class="text-center py-12"><i data-lucide="package" style="width:48px;height:48px;margin:0 auto 12px;opacity:0.3"></i>
-          <p style="color:rgba(255,255,255,0.4)">Nenhum lote cadastrado</p>
-         </div>
+        <div id="estoqueList" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
+        <div id="estoqueEmpty" class="text-center py-12"><i data-lucide="package" style="width:48px;height:48px;margin:0 auto 12px;opacity:0.3"></i>
+         <p style="color:rgba(255,255,255,0.4)">Nenhum lote cadastrado</p>
         </div>
        </div><!-- ESTOQUE GERAL PAGE -->
        <div id="page-estoque-geral" class="page-content fade-in hidden">
@@ -1118,15 +1115,120 @@
       <h3 class="font-heading text-xl font-bold">Novo Lote</h3><button onclick="closeModal(null, 'addEstoqueModal')" style="background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer"> <i data-lucide="x" style="width:20px;height:20px"></i> </button>
      </div>
      <form onsubmit="salvarEstoque(event)">
-      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Nome do Lote</label> <input type="text" id="estoqueLote" placeholder="Ex: Lote A, Lote Premium" required>
+      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Nome do Lote</label> <input type="text" id="estoqueLote" placeholder="Ex: Lote 65, Lote Premium" required>
       </div>
-      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Gramatura</label> <input type="text" id="estoqueGramatura" placeholder="Ex: 10/20, 20/30" required>
+      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Data do Lote</label> <input type="date" id="estoqueData" required>
       </div>
-      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Peso (kg)</label> <input type="number" id="estoquePeso" placeholder="0.00" step="0.01" required>
+      <div class="mb-4">
+        <label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Gramaturas (adicione uma ou mais)</label>
+        <div id="estoqueGramaturasContainer">
+          <div class="gramatura-row mb-2" style="display:flex;gap:8px;align-items:center">
+            <input type="text" class="gramatura-text" placeholder="Ex: 12g" required style="flex:1">
+            <input type="number" class="gramatura-peso" placeholder="Peso (kg)" step="0.01" required style="width:130px">
+            <button type="button" class="btn-secondary" onclick="removeGramaturaRow(this)" style="padding:6px 8px">Remover</button>
+          </div>
+        </div>
+        <div style="margin-top:8px"><button type="button" id="addGramaturaBtn" class="btn-primary" onclick="addGramaturaRow()">Adicionar gramatura</button></div>
       </div>
-      <div class="mb-6"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Data</label> <input type="date" id="estoqueData" required>
+      <div class="flex gap-3"><button type="button" class="btn-secondary flex-1" onclick="closeModal(null, 'addEstoqueModal')">Cancelar</button> <button type="submit" class="btn-primary flex-1">Salvar Lote</button>
       </div>
-      <div class="flex gap-3"><button type="button" class="btn-secondary flex-1" onclick="closeModal(null, 'addEstoqueModal')">Cancelar</button> <button type="submit" class="btn-primary flex-1">Salvar</button>
+     </form>
+    </div>
+   </div>
+
+   <script>
+   function addGramaturaRow() {
+     const container = document.getElementById('estoqueGramaturasContainer');
+     const row = document.createElement('div');
+     row.className = 'gramatura-row mb-2';
+     row.style = 'display:flex;gap:8px;align-items:center';
+     row.innerHTML = `
+       <input type="text" class="gramatura-text" placeholder="Ex: 12g" required style="flex:1">
+       <input type="number" class="gramatura-peso" placeholder="Peso (kg)" step="0.01" required style="width:130px">
+       <button type="button" class="btn-secondary" onclick="removeGramaturaRow(this)" style="padding:6px 8px">Remover</button>
+     `;
+     container.appendChild(row);
+   }
+
+   function removeGramaturaRow(btn) {
+     const row = btn.closest('.gramatura-row');
+     if (!row) return;
+     const container = document.getElementById('estoqueGramaturasContainer');
+     if (container.querySelectorAll('.gramatura-row').length === 1) {
+       // keep at least one row
+       row.querySelector('.gramatura-text').value = '';
+       row.querySelector('.gramatura-peso').value = '';
+       return;
+     }
+     row.remove();
+   }
+
+   async function salvarEstoque(e) {
+     e.preventDefault();
+     try {
+       const nome = document.getElementById('estoqueLote').value.trim();
+       const data = document.getElementById('estoqueData').value;
+       if (!nome || !data) return alert('Preencha nome e data do lote.');
+       const rows = Array.from(document.querySelectorAll('#estoqueGramaturasContainer .gramatura-row'));
+       const gramaturas = rows.map(r => ({
+         gramatura: (r.querySelector('.gramatura-text')||{}).value.trim(),
+         peso: parseFloat((r.querySelector('.gramatura-peso')||{}).value) || 0
+       })).filter(g => g.gramatura && g.peso > 0);
+       if (gramaturas.length === 0) return alert('Adicione pelo menos uma gramatura com peso.');
+
+       // create lote
+       if (typeof pb === 'undefined') return alert('PocketBase não inicializado ainda. Recarregue a página.');
+       const lotePayload = { nome_lote: nome, data_lote: data, status: 'ativo' };
+       const lote = await pb.collection('estoque').create(lotePayload);
+       console.log('✅ Lote criado com sucesso:', lote.id);
+
+       // create gramaturas
+       for (const g of gramaturas) {
+         await pb.collection('estoque_gramaturas').create({ lote_id: lote.id, gramatura: g.gramatura, peso: g.peso });
+         console.log('✅ Gramatura criada:', g.gramatura);
+       }
+
+       // reset form: limpar todos os inputs
+       document.getElementById('estoqueLote').value = '';
+       document.getElementById('estoqueData').value = '';
+       const container = document.getElementById('estoqueGramaturasContainer');
+       container.innerHTML = `
+         <div class="gramatura-row mb-2" style="display:flex;gap:8px;align-items:center">
+           <input type="text" class="gramatura-text" placeholder="Ex: 12g" required style="flex:1">
+           <input type="number" class="gramatura-peso" placeholder="Peso (kg)" step="0.01" required style="width:130px">
+           <button type="button" class="btn-secondary" onclick="removeGramaturaRow(this)" style="padding:6px 8px">Remover</button>
+         </div>
+       `;
+
+       // close modal
+       const modalOverlay = document.getElementById('addEstoqueModal');
+       if (modalOverlay) modalOverlay.classList.add('hidden');
+
+       // reload data e aguardar renderização
+       if (typeof loadAll === 'function') await loadAll();
+       console.log('✅ Dados recarregados, lote pronto para nova entrada');
+       alert('Lote e gramaturas salvos com sucesso!');
+     } catch (err) {
+       console.error(err);
+       alert('Erro ao salvar lote: ' + (err.message || err));
+     }
+   }
+   </script>
+   <!-- ADD GRAMATURA ESTOQUE MODAL -->
+   <div id="addGramaturaModal" class="modal-overlay hidden" onclick="closeModal(event, 'addGramaturaModal')">
+    <div class="glass rounded-xl p-8 max-w-md w-full mx-4 fade-in" onclick="event.stopPropagation()">
+     <div class="flex items-center justify-between mb-6">
+      <h3 class="font-heading text-xl font-bold">Adicionar Gramatura</h3><button onclick="closeModal(null, 'addGramaturaModal')" style="background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer"> <i data-lucide="x" style="width:20px;height:20px"></i> </button>
+     </div>
+     <form onsubmit="salvarGramatura(event)">
+      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Lote</label> <input type="text" id="gramaturaLoteName" placeholder="Lote" disabled style="background:rgba(255,255,255,0.03);">
+      <input type="hidden" id="gramaturaLoteId">
+      </div>
+      <div class="mb-4"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Gramatura</label> <input type="text" id="gramaturaTexto" placeholder="Ex: 12g, 15g, 20g" required>
+      </div>
+      <div class="mb-6"><label style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;display:block;margin-bottom:6px">Peso (kg)</label> <input type="number" id="gramaturaPeso" placeholder="0.00" step="0.01" required>
+      </div>
+      <div class="flex gap-3"><button type="button" class="btn-secondary flex-1" onclick="closeModal(null, 'addGramaturaModal')">Cancelar</button> <button type="submit" class="btn-primary flex-1">Adicionar</button>
       </div>
      </form>
     </div>
@@ -1319,6 +1421,7 @@
       funcionarios: [],
       transacoes: [],
       estoque: [],
+      estoque_gramaturas: [],
       historicoEstoque: [],
       producao: [],
       despesasFixas: [],
@@ -1352,6 +1455,7 @@
       currentData.funcionarios      = await carregarColecao('funcionarios');
       currentData.transacoes        = await carregarColecao('transacoes');
       currentData.estoque           = await carregarColecao('estoque');
+      currentData.estoque_gramaturas = await carregarColecao('estoque_gramaturas');
       currentData.producao          = await carregarColecao('producao');
       currentData.despesasFixas     = await carregarColecao('despesasFixas');
       currentData.despesasVariaveis = await carregarColecao('despesasVariaveis');
@@ -1362,6 +1466,7 @@
     funcionarios: currentData.funcionarios.length,
     transacoes: currentData.transacoes.length,
     estoque: currentData.estoque.length,
+    estoque_gramaturas: currentData.estoque_gramaturas.length,
     producao: currentData.producao.length
   });
 
@@ -1374,6 +1479,7 @@
         funcionarios: [],
         transacoes: [],
         estoque: [],
+        estoque_gramaturas: [],
         historicoEstoque: [],
         producao: [],
         despesasFixas: [],
@@ -1481,6 +1587,20 @@
         }
         renderEstoque();
         atualizarSelectLotes();
+      });
+
+      // Estoque Gramaturas
+      pb.collection('estoque_gramaturas').subscribe('*', function (e) {
+        console.log('Realtime estoque_gramaturas:', e.action, e.record);
+        if (e.action === 'create') {
+          ensureUniqueRealtime('estoque_gramaturas', e.record);
+        } else if (e.action === 'update') {
+          const idx = currentData.estoque_gramaturas.findIndex(eg => eg.id === e.record.id);
+          if (idx !== -1) currentData.estoque_gramaturas[idx] = e.record;
+        } else if (e.action === 'delete') {
+          currentData.estoque_gramaturas = currentData.estoque_gramaturas.filter(eg => eg.id !== e.record.id);
+        }
+        renderEstoque();
       });
 
       // Produção
@@ -2194,35 +2314,6 @@
         console.error('Erro ao lançar despesas:', err);
         showToast('Erro ao lançar despesas!', '#ff6b6b');
       }
-    }
-
-    function renderEstoque() {
-      const tbody = document.getElementById('estoqueList');
-      if (currentData.estoque.length === 0) {
-        tbody.innerHTML = '';
-        document.getElementById('estoqueEmpty').style.display = 'block';
-        return;
-      }
-      document.getElementById('estoqueEmpty').style.display = 'none';
-      tbody.innerHTML = currentData.estoque.map(e => `
-        <tr class="table-row">
-          <td class="py-3 px-4">${e.tipo_lote || '-'}</td>
-          <td class="py-3 px-4">${e.gramatura || '-'}</td>
-          <td class="py-3 px-4" style="color:#00e6c8;font-weight:600">${e.peso || 0} kg</td>
-          <td class="py-3 px-4" style="color:rgba(255,255,255,0.6)">${e.data_lote ? new Date(e.data_lote).toLocaleDateString('pt-BR') : '-'}</td>
-          <td class="py-3 px-4"><div class="flex gap-2 justify-center">
-            <button onclick="editarEstoque('${e.id}')"
-              style="background:rgba(0,230,200,0.1);
-                border:1px solid rgba(0,230,200,0.2);
-                border-radius:6px;padding:4px 10px;
-                color:#00e6c8;cursor:pointer;font-size:12px;
-                font-weight:600;">
-              Editar
-            </button>
-            <button class="btn-danger py-1 px-2 text-xs" onclick="apagarEstoque('${e.id}')">Excluir</button>
-          </div></td>
-        </tr>
-      `).join('');
     }
 
     function formatarData(dataStr) {
@@ -3246,47 +3337,6 @@
         successMessage: '✓ Transação registrada!',
         errorMessage: 'Erro ao salvar transação!'
       });
-    }
-
-   async function salvarEstoque(e) {
-      e.preventDefault();
-      
-      const nome = document.getElementById('estoqueLote').value;
-      const gramatura = document.getElementById('estoqueGramatura').value;
-      const peso = parseFloat(document.getElementById('estoquePeso').value);
-      const data = document.getElementById('estoqueData').value;
-      
-      if (!nome || !gramatura || !peso || !data) {
-        showToast('Preencha todos os campos!', '#ff6b6b');
-        return;
-      }
-      
-      const dados = {
-        tipo_lote: nome,
-        gramatura: gramatura,
-        peso: peso,
-        data_lote: parseDateLocal(data) ? parseDateLocal(data).toISOString() : null,
-        status: 'ativo'
-      };
-
-      try {
-        if (editandoId) {
-          await pb.collection('estoque').update(editandoId, dados);
-          editandoId = null;
-        } else {
-          await pb.collection('estoque').create(dados);
-        }
-        
-        document.getElementById('addEstoqueModal').classList.add('hidden');
-        document.getElementById('addEstoqueModal').style.display = 'none';
-        document.getElementById('addEstoqueModal').querySelector('form').reset();
-        
-        await loadAll();
-        renderAll();
-        showToast('Lote salvo com sucesso!', '#00e6c8');
-      } catch(e) {
-        showToast('Erro: ' + e.message, '#ff6b6b');
-      }
     }
 
     async function salvarEntrada(e) {
@@ -5287,6 +5337,267 @@ function exportarHistoricoFuncionario(fid, nome) {
     nome.toLowerCase().replace(/\s/g,'-') + '.pdf');
   showToast('PDF gerado!', '#00e6c8');
 }
+
+    // ====== ESTOQUE - NOVO SISTEMA COM LOTES E GRAMATURAS ======
+
+    // Carregar gramaturas de um lote específico
+    async function carregarGramaturasDeLote(loteId) {
+      try {
+        const filtro = `lote_id = "${loteId}"`;
+        return await pb.collection('estoque_gramaturas').getFullList({
+          filter: filtro,
+          sort: '-created'
+        });
+      } catch (e) {
+        console.warn('Erro ao carregar gramaturas:', e.message);
+        return [];
+      }
+    }
+
+    // Salvar novo LOTE (apenas o nome)
+    // Abrir modal de adicionar gramatura
+    async function abrirModalGramatura(loteId, loteName) {
+      document.getElementById('gramaturaLoteId').value = loteId;
+      document.getElementById('gramaturaLoteName').value = loteName;
+      document.getElementById('gramaturaTexto').value = '';
+      document.getElementById('gramaturaPeso').value = '';
+      openModal('addGramaturaModal');
+    }
+
+    // Salvar GRAMATURA ao lote
+    async function salvarGramatura(e) {
+      e.preventDefault();
+
+      const loteId = document.getElementById('gramaturaLoteId').value;
+      const gramatura = document.getElementById('gramaturaTexto').value;
+      const peso = parseFloat(document.getElementById('gramaturaPeso').value);
+
+      if (!loteId || !gramatura || !peso) {
+        showToast('Preencha todos os campos!', '#ff6b6b');
+        return;
+      }
+
+      const dados = {
+        lote_id: loteId,
+        gramatura: gramatura,
+        peso: peso,
+        data_criacao: new Date().toISOString()
+      };
+
+      try {
+        await pb.collection('estoque_gramaturas').create(dados);
+
+        document.getElementById('addGramaturaModal').classList.add('hidden');
+        document.getElementById('addGramaturaModal').style.display = 'none';
+        document.getElementById('addGramaturaModal').querySelector('form').reset();
+
+        // Recarregar dados
+        if (!currentData.estoque_gramaturas) {
+          currentData.estoque_gramaturas = [];
+        } else {
+          currentData.estoque_gramaturas = await carregarColecao('estoque_gramaturas');
+        }
+
+        renderEstoque();
+        showToast('Gramatura adicionada com sucesso!', '#00e6c8');
+      } catch (e) {
+        showToast('Erro: ' + e.message, '#ff6b6b');
+      }
+    }
+
+    // Renderizar estoques em cards (novo sistema)
+    async function renderEstoque() {
+      const container = document.getElementById('estoqueList');
+      const empty = document.getElementById('estoqueEmpty');
+
+      if (!currentData.estoque || currentData.estoque.length === 0) {
+        container.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+
+      // Carregar todas as gramaturas
+      if (!currentData.estoque_gramaturas) {
+        try {
+          currentData.estoque_gramaturas = await carregarColecao('estoque_gramaturas');
+        } catch (e) {
+          currentData.estoque_gramaturas = [];
+        }
+      }
+
+      const cards = await Promise.all(
+        currentData.estoque.map(async (lote) => {
+          // Filtrar gramaturas deste lote
+          const gramaturas = (currentData.estoque_gramaturas || []).filter(
+            g => g.lote_id === lote.id
+          );
+
+          const pesoTotal = gramaturas.reduce((acc, g) => acc + (parseFloat(g.peso) || 0), 0);
+
+          return `
+            <div class="glass rounded-xl p-6" style="border:1px solid rgba(0,230,200,0.1);">
+              <!-- Header do card -->
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="font-heading font-semibold" style="font-size:16px;color:#fff;margin-bottom:4px;">
+                    ${lote.nome_lote || 'Sem nome'}
+                  </h3>
+                  <p style="font-size:12px;color:rgba(255,255,255,0.5);">
+                    ${gramaturas.length} gramatura${gramaturas.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <button 
+                    onclick="abrirModalGramatura('${lote.id}', '${lote.nome_lote}')"
+                    style="background:rgba(0,230,200,0.1);border:1px solid rgba(0,230,200,0.3);
+                      border-radius:8px;padding:8px 12px;color:#00e6c8;
+                      cursor:pointer;font-size:12px;font-weight:600;">
+                    <i data-lucide="plus" style="width:14px;height:14px;display:inline;margin-right:4px;"></i>Gramatura
+                  </button>
+                  <button 
+                    onclick="apagarEstoque('${lote.id}')"
+                    class="btn-danger"
+                    style="padding:8px 12px;font-size:12px;">
+                    <i data-lucide="trash-2" style="width:14px;height:14px;display:inline;"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Info geral -->
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;margin-bottom:16px;
+                border:1px solid rgba(255,255,255,0.05);">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="color:rgba(255,255,255,0.6);font-size:12px;">Peso Total</span>
+                  <span style="font-size:16px;font-weight:700;color:#00e6c8;">${pesoTotal.toFixed(2)} kg</span>
+                </div>
+              </div>
+
+              <!-- Lista de gramaturas -->
+              ${
+                gramaturas.length > 0
+                  ? `
+                <div style="margin-bottom:12px;">
+                  <p style="font-size:11px;color:rgba(255,255,255,0.4);
+                    text-transform:uppercase;margin-bottom:8px;font-weight:600;">
+                    Gramaturas
+                  </p>
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                    ${gramaturas
+                      .map(
+                        (g) => `
+                      <div style="background:rgba(0,230,200,0.1);border:1px solid rgba(0,230,200,0.2);
+                        border-radius:6px;padding:8px 12px;display:flex;
+                        align-items:center;gap:8px;">
+                        <span style="color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;">
+                          ${g.gramatura}
+                        </span>
+                        <span style="color:#00e6c8;font-size:11px;font-weight:600;">
+                          ${parseFloat(g.peso).toFixed(2)} kg
+                        </span>
+                        <button 
+                          onclick="apagarGramatura('${g.id}')"
+                          style="background:none;border:none;color:#ff6b6b;
+                            cursor:pointer;padding:0;margin-left:4px;">
+                          <i data-lucide="x" style="width:12px;height:12px;"></i>
+                        </button>
+                      </div>
+                    `
+                      )
+                      .join('')}
+                  </div>
+                </div>
+                  `
+                  : `
+                <div style="text-align:center;padding:16px;color:rgba(255,255,255,0.3);font-size:12px;">
+                  Nenhuma gramatura cadastrada
+                </div>
+                  `
+              }
+            </div>
+          `;
+        })
+      );
+
+      container.innerHTML = cards.join('');
+
+      // Renderizar ícones Lucide
+      try {
+        lucide.createIcons();
+      } catch (e) {
+        console.error('Erro ao renderizar ícones:', e);
+      }
+    }
+
+    // Apagar gramatura
+    async function apagarGramatura(gramaturaId) {
+      if (!confirm('Tem certeza que deseja remover esta gramatura?')) return;
+
+      try {
+        await pb.collection('estoque_gramaturas').delete(gramaturaId);
+        currentData.estoque_gramaturas = await carregarColecao('estoque_gramaturas');
+        renderEstoque();
+        showToast('Gramatura removida!', '#00e6c8');
+      } catch (e) {
+        showToast('Erro: ' + e.message, '#ff6b6b');
+      }
+    }
+
+    // Apagar lote (e suas gramaturas)
+    async function apagarEstoque(loteId) {
+      if (!confirm('Tem certeza? Isso também removerá todas as gramaturas do lote!')) return;
+
+      try {
+        // Apagar todas as gramaturas deste lote
+        const gramaturas = await carregarGramaturasDeLote(loteId);
+        for (const g of gramaturas) {
+          await pb.collection('estoque_gramaturas').delete(g.id);
+        }
+
+        // Apagar o lote
+        await pb.collection('estoque').delete(loteId);
+
+        currentData.estoque = await carregarColecao('estoque');
+        currentData.estoque_gramaturas = await carregarColecao('estoque_gramaturas');
+        renderEstoque();
+        atualizarSelectLotes();
+        showToast('Lote e suas gramaturas removidos!', '#00e6c8');
+      } catch (e) {
+        showToast('Erro: ' + e.message, '#ff6b6b');
+      }
+    }
+
+    // Editar lote
+    async function editarEstoque(loteId) {
+      const lote = currentData.estoque.find(e => e.id === loteId);
+      if (!lote) return;
+
+      editandoId = loteId;
+      document.getElementById('estoqueLote').value = lote.nome_lote;
+      openModal('addEstoqueModal');
+    }
+
+    // Atualizar select de lotes (para outras funcionalidades)
+    function atualizarSelectLotes() {
+      const selects = [
+        'entradaLoteId',
+        'saidaLoteId',
+        'novoLoteNome'
+      ];
+
+      for (const selectId of selects) {
+        const select = document.getElementById(selectId);
+        if (!select) continue;
+
+        const valorAtual = select.value;
+        select.innerHTML = '<option value="">Selecione um lote</option>' +
+          (currentData.estoque || [])
+            .map(e => `<option value="${e.id}">${e.nome_lote}</option>`)
+            .join('');
+        select.value = valorAtual;
+      }
+    }
    </script>
 </body>
 </html>
